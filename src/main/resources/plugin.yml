@@ -1,0 +1,7 @@
+name: MinePlugin
+version: 0.1.0
+main: edu.shch.mine.MinePlugin
+description: Minesweeper in Minecraft
+author: Me
+website: https://c0mpl3x.one
+api-version: '1.21.11'
