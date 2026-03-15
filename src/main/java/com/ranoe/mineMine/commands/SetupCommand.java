@@ -1,8 +1,10 @@
 package com.ranoe.mineMine.commands;
 
+import com.ranoe.mineMine.Sprite;
 import com.ranoe.mineMine.util.MineLogic;
 import io.papermc.paper.command.brigadier.BasicCommand;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
+import org.bukkit.Location;
 import org.bukkit.entity.Player;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
@@ -23,9 +25,7 @@ public class SetupCommand implements BasicCommand {
                 source.getSender().sendRichMessage(MineLogic.getPrefix() + "The game has been set up, enjoy :)");
                 try {
                     MineLogic.setupTiles(Objects.requireNonNull(((Player) source.getExecutor()).getPlayer()));
-                } catch (MalformedURLException e) {
-                    throw new RuntimeException(e);
-                } catch (URISyntaxException e) {
+                } catch (MalformedURLException | URISyntaxException e) {
                     throw new RuntimeException(e);
                 }
             } else {
@@ -47,33 +47,11 @@ public class SetupCommand implements BasicCommand {
                 }
                 source.getSender().sendRichMessage(MineLogic.getPrefix() + "A test-sprite has been spawned!");
 
-                try {
-                    if (spriteID >= MineLogic.spriteList().size()) {
-                        source.getSender().sendRichMessage(MineLogic.getPrefix() + "Sprite ID invalid!");
-                        return;
-                    }
-                    MineLogic.spawnSprite(source.getExecutor().getLocation(), spriteID);
-                } catch (URISyntaxException | MalformedURLException e) {
-                    throw new RuntimeException(e);
+                if (spriteID >= Sprite.values().length) {
+                    source.getSender().sendRichMessage(MineLogic.getPrefix() + "Sprite ID invalid!");
+                    return;
                 }
-            } else {
-                source.getSender().sendRichMessage(MineLogic.getPrefix() + "You must be a player to execute this command!");
-            }
-        } else if (args[0].equalsIgnoreCase("sprites")) {
-            if (source.getExecutor() instanceof Player player) {
-                source.getSender().sendRichMessage(MineLogic.getPrefix() + "You have received all sprites!");
-                int slotCounter = 0;
-                for (int i = 1; i <= 8; i++) {
-                    try {
-                        player.getInventory().setItem(slotCounter, MineLogic.spawnSpriteHead(i));
-                    } catch (URISyntaxException e) {
-                        throw new RuntimeException(e);
-                    } catch (MalformedURLException e) {
-                        throw new RuntimeException(e);
-                    }
-                    slotCounter += 1;
-                    if (slotCounter == 4) {slotCounter+=1;}
-                }
+                Sprite.values()[spriteID].spawn(source.getExecutor().getLocation());
             } else {
                 source.getSender().sendRichMessage(MineLogic.getPrefix() + "You must be a player to execute this command!");
             }

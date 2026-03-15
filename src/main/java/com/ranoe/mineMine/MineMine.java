@@ -6,6 +6,7 @@ import org.bukkit.Bukkit;
 import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.java.JavaPlugin;
 
+@SuppressWarnings("unused")
 public final class MineMine extends JavaPlugin {
 
     @Override
@@ -14,12 +15,5 @@ public final class MineMine extends JavaPlugin {
 
         PluginManager pluginManager = Bukkit.getPluginManager();
         pluginManager.registerEvents(PlayerInteractListener.getInstance(), this);
-        //pluginManager.registerEvents(BlockPlaceListener.getInstance(), this);
-
-    }
-
-    @Override
-    public void onDisable() {
-        // Plugin shutdown logic
     }
 }
