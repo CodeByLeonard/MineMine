@@ -13,6 +13,7 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.SkullMeta;
 import org.bukkit.profile.PlayerTextures;
 
+import static com.ranoe.mineMine.util.MineUtils.killStandOnBlock;
 import static org.bukkit.Material.*;
 
 import java.net.MalformedURLException;
@@ -66,6 +67,7 @@ public enum Sprite {
     }
 
     public void spawn(Location location) {
+        killStandOnBlock(location);
         ArmorStand armorStand = (ArmorStand) location.getWorld().spawnEntity(
                 location.toCenterLocation().subtract(0, 1.3, 0), EntityType.ARMOR_STAND
         );

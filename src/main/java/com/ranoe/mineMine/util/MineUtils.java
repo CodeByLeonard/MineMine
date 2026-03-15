@@ -1,6 +1,5 @@
 package com.ranoe.mineMine.util;
 
-import com.ranoe.mineMine.Sprite;
 import io.papermc.paper.math.Rotations;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
@@ -12,32 +11,10 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 
 import java.util.List;
-import java.util.Random;
 
 public class MineUtils {
     public static String getPrefix() {
         return "<red><bold>MINESWEEPER</red> <dark_gray>»</dark_gray> ";
-    }
-
-    public static void setupTiles(Player player) {
-        killStandsInChunk(player.getChunk());
-        Block block = player.getLocation().getBlock();
-        Chunk chunk = block.getChunk();
-        int playerY = block.getY();
-        int maxY = block.getWorld().getMaxHeight() -1;
-        int endY = Math.min(playerY + 10, maxY);
-
-        for (int x = 0; x < 16; x++) {
-            for (int z = 0; z < 16; z++) {
-                for (int y = playerY; y <= endY; y++) {
-                    Block currentBlock = chunk.getBlock(x ,y, z);
-                    currentBlock.setType(Material.AIR, false);
-                }
-                chunk.getBlock(x, playerY - 1 ,z).setType(Material.SMOOTH_STONE);
-                chunk.getBlock(x, playerY - 2 ,z).setType(Material.BARREL);
-            }
-        }
-        player.getInventory().setItem(4, getMagicWand());
     }
 
     public static ItemStack getMagicWand() {
@@ -59,25 +36,12 @@ public class MineUtils {
         return wand;
     }
 
-    private static final Random random = new Random();
-    public static void revealBlock(Block block) {
-        int randomInt = random.nextInt(Sprite.values().length);
-        Sprite randomSprite = Sprite.values()[randomInt];
-        block.setType(randomSprite.getMaterial(), false);
+    public static void spawnExplosion(Block block) {
         Location spawnLocation = block.getLocation();
-        killStandOnBlock(spawnLocation);
-        randomSprite.spawn(spawnLocation);
-        if (randomSprite == Sprite.BOMB) {
-            block.getWorld().spawnParticle(Particle.EXPLOSION, spawnLocation, 2);
-            block.getWorld().spawnParticle(Particle.EXPLOSION_EMITTER, spawnLocation, 1);
-            block.getWorld().spawnParticle(Particle.LAVA, spawnLocation, 1);
-            block.getWorld().playSound(spawnLocation, Sound.ENTITY_GENERIC_EXPLODE, 1f, 1.5f);
-        }
-    }
-
-    public static void flagBlock(Block block) {
-        Sprite.FLAG.spawn(block.getLocation());
-        block.setType(Sprite.FLAG.getMaterial());
+        block.getWorld().spawnParticle(Particle.EXPLOSION, spawnLocation, 2);
+        block.getWorld().spawnParticle(Particle.EXPLOSION_EMITTER, spawnLocation, 1);
+        block.getWorld().spawnParticle(Particle.LAVA, spawnLocation, 1);
+        block.getWorld().playSound(spawnLocation, Sound.ENTITY_GENERIC_EXPLODE, 1f, 1.5f);
     }
 
     public static void unflagBlock(Block block) {

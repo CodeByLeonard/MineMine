@@ -1,9 +1,10 @@
 package com.ranoe.mineMine.listeners;
 
+import com.ranoe.mineMine.MineGame;
+import com.ranoe.mineMine.commands.SetupCommand;
 import com.ranoe.mineMine.util.MineUtils;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
-import org.bukkit.block.BlockFace;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -41,21 +42,26 @@ public class PlayerInteractListener implements Listener {
             !meta.getEnchantmentGlintOverride()
         ) return;
 
-        //Check if on the minefield
-        if (block.getRelative(BlockFace.DOWN).getType() != Material.BARREL)
-            return;
-
         if (block.getType() == Material.SMOOTH_STONE) {
             if (event.getAction().isLeftClick()) {
-                MineUtils.revealBlock(block);
+                MineGame game = SetupCommand.game;
+                if (game != null) {
+                    game.reveal(block);
+                }
             } else if (event.getAction().isRightClick()) {
-                MineUtils.flagBlock(block);
+                MineGame game = SetupCommand.game;
+                if (game != null) {
+                    game.flag(block);
+                }
             }
         } else if (block.getType() == Material.LODESTONE) {
             if (event.getAction().isLeftClick()) {
                 player.sendRichMessage(MineUtils.getPrefix() + "You have placed a flag there!");
             } else if (event.getAction().isRightClick()) {
-                MineUtils.unflagBlock(block);
+                MineGame game = SetupCommand.game;
+                if (game != null) {
+                    game.unflag(block);
+                }
             }
         }
     }

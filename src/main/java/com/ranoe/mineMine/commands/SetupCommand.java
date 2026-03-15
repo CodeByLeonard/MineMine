@@ -6,23 +6,25 @@ import com.ranoe.mineMine.util.MineUtils;
 import io.papermc.paper.command.brigadier.BasicCommand;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
 import org.bukkit.entity.Player;
-import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 
-import java.util.Objects;
+import static com.ranoe.mineMine.util.MineUtils.getMagicWand;
 
-@NullMarked
 public class SetupCommand implements BasicCommand {
+    public static MineGame game;
 
     @Override
-    public void execute(CommandSourceStack source, String[] args) {
+    public void execute(@NonNull CommandSourceStack source, String[] args) {
         if (args.length == 0) {
             source.getSender().sendRichMessage(MineUtils.getPrefix() + "Try typing in /minesweeper setup!");
         } else if (args[0].equalsIgnoreCase("setup")) {
             if (source.getExecutor() instanceof Player player) {
                 player.sendRichMessage(MineUtils.getPrefix() + "The game has been set up, enjoy :)");
                 // MineUtils.setupTiles(Objects.requireNonNull(((Player) source.getExecutor()).getPlayer()));
-                new MineGame(player.getLocation()).init(player);
+                game = new MineGame(player.getLocation());
+                game.init(player);
+                player.getInventory().setItem(4, getMagicWand());
             } else {
                 source.getSender().sendRichMessage(MineUtils.getPrefix() + "You must be a player to execute this command!");
             }
@@ -49,6 +51,10 @@ public class SetupCommand implements BasicCommand {
                 Sprite.values()[spriteID].spawn(source.getExecutor().getLocation());
             } else {
                 source.getSender().sendRichMessage(MineUtils.getPrefix() + "You must be a player to execute this command!");
+            }
+        } else if (args[0].equalsIgnoreCase("reveal")) {
+            if (game != null) {
+                game.revealAll();
             }
         }
     }
