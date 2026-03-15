@@ -12,7 +12,9 @@ public enum GameField {
     SIX(Material.CYAN_CONCRETE),
     SEVEN(Material.GRAY_CONCRETE),
     EIGHT(Material.BLACK_CONCRETE),
-    MINE(Material.REDSTONE_LAMP);
+    MINE(Material.REDSTONE_LAMP),
+    UNKNOWN(Material.HEAVY_WEIGHTED_PRESSURE_PLATE),
+    FLAG(Material.RED_BANNER);
 
     final Material block;
     GameField(Material block) {

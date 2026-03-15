@@ -20,17 +20,44 @@ public class GameState {
 
     ArrayList<BlockData> healCache;
     GameField[][] field = new GameField[16][16];
-    boolean[][] uncovered = new boolean[16][16];
+    FieldState[][] states = new FieldState[16][16];
 
     private GameState(Player player, Block locator) {
         this.player = player;
         this.locator = locator;
     }
 
+    public void toggleFlag(int x, int z) {
+        int blockChunkX = ((x % 16) + 16) % 16;
+        int blockChunkZ = ((z % 16) + 16) % 16;
+        int y = locator.getY() + 1;
+
+        if (states[blockChunkX][blockChunkZ] == FieldState.FLAGGED) {
+            states[blockChunkX][blockChunkZ] = FieldState.COVERED;
+            this.player.getServer().getScheduler().runTaskLater(
+                MinePlugin.instance,
+                () -> locator.getChunk().getBlock(blockChunkX, y, blockChunkZ)
+                        .setType(GameField.UNKNOWN.block),
+                1
+            );
+        } else if (states[blockChunkX][blockChunkZ] == FieldState.COVERED) {
+            states[blockChunkX][blockChunkZ] = FieldState.FLAGGED;
+            this.player.getServer().getScheduler().runTaskLater(
+                MinePlugin.instance,
+                () -> locator.getChunk().getBlock(blockChunkX, y, blockChunkZ)
+                        .setType(GameField.FLAG.block),
+                1
+            );
+        }
+    }
+
     public boolean uncover(Player player, int x, int z) {
         int blockChunkX = ((x % 16) + 16) % 16;
         int blockChunkZ = ((z % 16) + 16) % 16;
         int y = locator.getY();
+
+        if (states[blockChunkX][blockChunkZ] == FieldState.FLAGGED) return false;
+
         GameField gameField = field[blockChunkX][blockChunkZ];
         if (gameField == GameField.MINE) {
             finish(false);
@@ -46,13 +73,13 @@ public class GameState {
 
                 while (!cleared.isEmpty()) {
                     Vector2i item = cleared.removeFirst();
-                    uncovered[item.x][item.y] = true;
+                    states[item.x][item.y] = FieldState.UNCOVERED;
                     chunk.getBlock(item.x, y + 1, item.y).setType(Material.AIR);
                     chunk.getBlock(item.x, y, item.y).setType(gameField.block);
                     forEachSurrounding(field, item.x, item.y, (f, coords) -> {
-                        if (f == GameField.NONE && !uncovered[coords.x][coords.y]) {
+                        if (f == GameField.NONE && states[coords.x][coords.y] == FieldState.COVERED) {
                             cleared.add(coords);
-                        } else if (!uncovered[coords.x][coords.y]) {
+                        } else if (states[coords.x][coords.y] == FieldState.COVERED) {
                             chunk.getBlock(coords.x, y + 1, coords.y).setType(Material.AIR);
                             chunk.getBlock(coords.x, y, coords.y).setType(field[coords.x][coords.y].block);
                         }
@@ -62,7 +89,7 @@ public class GameState {
                 // Remove the Pressure Plate
                 origin.getRelative(BlockFace.UP).setType(Material.AIR);
                 origin.setType(gameField.block);
-                uncovered[blockChunkX][blockChunkZ] = true;
+                states[blockChunkX][blockChunkZ] = FieldState.UNCOVERED;
             }
             player.setVelocity(new Vector(0, 1f, 0));
         }
@@ -134,7 +161,7 @@ public class GameState {
 
         for (int x = 0; x < 16; x++) {
             for (int z = 0; z < 16; z++) {
-                state.uncovered[x][z] = false;
+                state.states[x][z] = FieldState.COVERED;
             }
         }
 
@@ -196,7 +223,7 @@ public class GameState {
                 // NOTE: setType(block)
                 chunk.getBlock(x, yLevel, z).setType(GameField.NONE.block);
                 // NOTE: HEAVY_WEIGHTED_PRESSURE_PLATE / AIR
-                chunk.getBlock(x, yLevel + 1, z).setType(Material.HEAVY_WEIGHTED_PRESSURE_PLATE);
+                chunk.getBlock(x, yLevel + 1, z).setType(GameField.UNKNOWN.block);
             }
         }
     }

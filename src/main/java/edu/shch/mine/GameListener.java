@@ -11,10 +11,12 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
 import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.entity.EntityInteractEvent;
+import org.bukkit.event.player.PlayerDropItemEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.inventory.meta.components.CustomModelDataComponent;
+import org.bukkit.util.RayTraceResult;
 import org.jspecify.annotations.NonNull;
 
 import java.util.ArrayList;
@@ -52,16 +54,17 @@ public class GameListener implements Listener {
             Player player = event.getPlayer();
             if (alphaMaterial == alphaTestMaterial && betaMaterial == betaTestMaterial) {
                 games.add(GameState.from(player, event.getBlock().getRelative(0, -index, 0)));
-                player.getServer().getScheduler().runTaskLater(MinePlugin.instance, () -> {
+                Server server = player.getServer();
+                server.getScheduler().runTaskLater(MinePlugin.instance, () -> {
                     List<Material> trash = List.of(
                             // Seeds
                             Material.WHEAT_SEEDS,
                             // Tree Drops
                             Material.SPRUCE_SAPLING,
-                            // Flowers
+                            // Flowers, Mushrooms
                             Material.POPPY
                     );
-                    for (Entity e : player.getServer().selectEntities(player.getServer().getConsoleSender(), "@e[type=item]")) {
+                    for (Entity e : server.selectEntities(server.getConsoleSender(), "@e[type=item]")) {
                         if (e instanceof Item item) {
                             if (trash.contains(item.getItemStack().getType())) {
                                 item.remove();
@@ -91,7 +94,7 @@ public class GameListener implements Listener {
     public void checkMines(PlayerInteractEvent event) {
         if (event.getAction() == Action.PHYSICAL &&
             event.getClickedBlock() != null &&
-            event.getClickedBlock().getType() == Material.HEAVY_WEIGHTED_PRESSURE_PLATE
+            event.getClickedBlock().getType() == GameField.UNKNOWN.block
         ) {
             MinePlugin.instance.getLogger().info("Uncovering Field...");
             Block block = event.getClickedBlock();
@@ -117,19 +120,27 @@ public class GameListener implements Listener {
     }
 
     @EventHandler
-    public void flagMine(EntityInteractEvent event) {
-        if (
-            event.getEntity() instanceof Item item &&
-            item.getItemStack().getType() == Material.RED_BANNER &&
-            event.getBlock().getType() == Material.HEAVY_WEIGHTED_PRESSURE_PLATE
-        ) {
-            MinePlugin.instance.getLogger().info("Placing Flag...");
-            // TODO Handle Flag Placement
-            Optional<Player> player = item.getNearbyEntities(8, 8, 8).stream()
-                    .filter(e -> e instanceof Player)
-                    .map(e -> (Player) e).findFirst();
-            player.ifPresent(value -> value.getInventory().addItem(createFlag()));
-            item.remove();
+    public void toggleMine(PlayerDropItemEvent event) {
+        if (event.getItemDrop().getItemStack().getType() != GameField.FLAG.block) return;
+        Player player = event.getPlayer();
+        for (GameState game : games) {
+            if (game.locator.getChunk().getChunkKey() == player.getChunk().getChunkKey()) {
+                RayTraceResult result = player.rayTraceBlocks(16);
+                if (result == null) continue;
+                Block block = result.getHitBlock();
+                List<Material> flagBlocks = List.of(GameField.UNKNOWN.block, GameField.FLAG.block);
+                if (block != null && flagBlocks.contains(block.getType())) {
+                    player.getServer().getScheduler().runTaskLater(
+                        MinePlugin.instance,
+                        () -> {
+                            game.toggleFlag(block.getX(), block.getZ());
+                            player.getInventory().addItem(createFlag());
+                            event.getItemDrop().remove();
+                        },
+                        1
+                    );
+                }
+            }
         }
     }
 
