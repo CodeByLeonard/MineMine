@@ -1,0 +1,23 @@
+{
+  "model": {
+    "type": "select",
+    "property": "custom_model_data",
+    "fallback": {
+      "type": "minecraft:special",
+      "base": "minecraft:item/template_banner",
+      "model": {
+        "type": "minecraft:banner",
+        "color": "red"
+      }
+    },
+    "cases": [
+      {
+        "when": "flag",
+        "model": {
+          "type": "model",
+          "model": "item/flag"
+        }
+      }
+    ]
+  }
+}

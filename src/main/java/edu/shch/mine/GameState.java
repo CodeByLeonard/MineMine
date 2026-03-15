@@ -85,6 +85,20 @@ public class GameState {
             }
         }
 
+        for (Player p : block.getLocation().getNearbyPlayers(48)) {
+            // TODO: Construct Block Data that actually makes sense...
+            // https://www.youtube.com/watch?v=K39U55l4-O0
+            // https://minecraft.wiki/w/Pack_format
+            // https://minecraft.wiki/w/Tutorial:Models#Item_predicates
+            // TODO: Look into connecting textures?
+            BlockData ghostBlockData = Material.LAVA.createBlockData();
+            p.sendBlockChange(
+                    block.getRelative(0, 5, 0).getLocation(),
+                    ghostBlockData
+            );
+            // Item Model Data: `/give @p red_banner[custom_model_data={strings:['flag']}]`
+        }
+
         return state;
     }
 }
