@@ -8,11 +8,18 @@ import org.bukkit.entity.Item;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
+import org.bukkit.event.block.Action;
 import org.bukkit.event.block.BlockPlaceEvent;
-import org.bukkit.event.block.BlockRedstoneEvent;
+import org.bukkit.event.entity.EntityInteractEvent;
+import org.bukkit.event.player.PlayerInteractEvent;
+import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.ItemMeta;
+import org.bukkit.inventory.meta.components.CustomModelDataComponent;
+import org.jspecify.annotations.NonNull;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 public class GameListener implements Listener {
     private static GameListener instance;
@@ -45,53 +52,84 @@ public class GameListener implements Listener {
             Player player = event.getPlayer();
             if (alphaMaterial == alphaTestMaterial && betaMaterial == betaTestMaterial) {
                 games.add(GameState.from(player, event.getBlock().getRelative(0, -index, 0)));
-            }
-
-            player.getServer().getScheduler().runTaskLater(MinePlugin.instance, () -> {
-                List<Material> trash = List.of(
-                        // Seeds
-                        Material.WHEAT_SEEDS,
-                        // Tree Drops
-                        Material.SPRUCE_SAPLING,
-                        // Flowers
-                        Material.POPPY
-                );
-                for (Entity e : player.getServer().selectEntities(player.getServer().getConsoleSender(), "@e[type=item]")) {
-                    if (e instanceof Item item) {
-                        if (trash.contains(item.getItemStack().getType())) {
-                            item.remove();
+                player.getServer().getScheduler().runTaskLater(MinePlugin.instance, () -> {
+                    List<Material> trash = List.of(
+                            // Seeds
+                            Material.WHEAT_SEEDS,
+                            // Tree Drops
+                            Material.SPRUCE_SAPLING,
+                            // Flowers
+                            Material.POPPY
+                    );
+                    for (Entity e : player.getServer().selectEntities(player.getServer().getConsoleSender(), "@e[type=item]")) {
+                        if (e instanceof Item item) {
+                            if (trash.contains(item.getItemStack().getType())) {
+                                item.remove();
+                            }
                         }
                     }
+                    player.getInventory().addItem(createFlag());
+                }, 1);
+            }
+        }
+    }
+
+    private static @NonNull ItemStack createFlag() {
+        ItemStack flag = ItemStack.of(Material.RED_BANNER);
+        ItemMeta itemMeta = flag.getItemMeta();
+        //noinspection UnstableApiUsage
+        CustomModelDataComponent cmd = itemMeta.getCustomModelDataComponent();
+        //noinspection UnstableApiUsage
+        cmd.setStrings(List.of("flag"));
+        //noinspection UnstableApiUsage
+        itemMeta.setCustomModelDataComponent(cmd);
+        flag.setItemMeta(itemMeta);
+        return flag.asOne();
+    }
+
+    @EventHandler
+    public void checkMines(PlayerInteractEvent event) {
+        if (event.getAction() == Action.PHYSICAL &&
+            event.getClickedBlock() != null &&
+            event.getClickedBlock().getType() == Material.HEAVY_WEIGHTED_PRESSURE_PLATE
+        ) {
+            MinePlugin.instance.getLogger().info("Uncovering Field...");
+            Block block = event.getClickedBlock();
+            for (int i = 0; i < games.size(); i++) {
+                GameState game = games.get(i);
+                if (game.locator.getChunk().getChunkKey() == block.getChunk().getChunkKey()) {
+                    Player player = event.getPlayer();
+                    Server server = player.getServer();
+                    int gameIndex = i;
+                    server.getScheduler().runTaskLater(
+                            MinePlugin.instance,
+                            () -> {
+                                if (game.uncover(player, block.getX(), block.getZ())) {
+                                    games.remove(gameIndex);
+                                }
+                            },
+                            1
+                    );
+                    break;
                 }
-            }, 1);
+            }
         }
     }
 
     @EventHandler
-    public void checkMines(BlockRedstoneEvent event) {
-        Block block = event.getBlock();
-        if (block.getType() == Material.HEAVY_WEIGHTED_PRESSURE_PLATE) {
-            for (int i = 0; i < games.size(); i++) {
-                GameState game = games.get(i);
-                if (game.locator.getChunk().getChunkKey() == block.getChunk().getChunkKey()) {
-                    List<Player> players = event.getBlock().getWorld().getPlayers();
-                    if (!players.isEmpty()) {
-                        Player player = players.getFirst();
-                        Server server = player.getServer();
-                        int gameIndex = i;
-                        server.getScheduler().runTaskLater(
-                                MinePlugin.instance,
-                                () -> {
-                                    if (game.uncover(block.getX(), block.getZ())) {
-                                        games.remove(gameIndex);
-                                    }
-                                },
-                                1
-                        );
-                    }
-                    break;
-                }
-            }
+    public void flagMine(EntityInteractEvent event) {
+        if (
+            event.getEntity() instanceof Item item &&
+            item.getItemStack().getType() == Material.RED_BANNER &&
+            event.getBlock().getType() == Material.HEAVY_WEIGHTED_PRESSURE_PLATE
+        ) {
+            MinePlugin.instance.getLogger().info("Placing Flag...");
+            // TODO Handle Flag Placement
+            Optional<Player> player = item.getNearbyEntities(8, 8, 8).stream()
+                    .filter(e -> e instanceof Player)
+                    .map(e -> (Player) e).findFirst();
+            player.ifPresent(value -> value.getInventory().addItem(createFlag()));
+            item.remove();
         }
     }
 

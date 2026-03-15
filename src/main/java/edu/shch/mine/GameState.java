@@ -27,7 +27,7 @@ public class GameState {
         this.locator = locator;
     }
 
-    public boolean uncover(int x, int z) {
+    public boolean uncover(Player player, int x, int z) {
         int blockChunkX = ((x % 16) + 16) % 16;
         int blockChunkZ = ((z % 16) + 16) % 16;
         int y = locator.getY();
@@ -64,9 +64,7 @@ public class GameState {
                 origin.setType(gameField.block);
                 uncovered[blockChunkX][blockChunkZ] = true;
             }
-            for (Player player : origin.getWorld().getNearbyPlayers(origin.getLocation(), 4)) {
-                player.setVelocity(new Vector(0, 1f, 0));
-            }
+            player.setVelocity(new Vector(0, 1f, 0));
         }
         return false;
     }
