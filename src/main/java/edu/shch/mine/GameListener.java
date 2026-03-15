@@ -3,6 +3,8 @@ package edu.shch.mine;
 import org.bukkit.Material;
 import org.bukkit.Server;
 import org.bukkit.block.Block;
+import org.bukkit.entity.Entity;
+import org.bukkit.entity.Item;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -40,9 +42,28 @@ public class GameListener implements Listener {
             Material alphaTestMaterial = event.getBlock().getRelative(0, alphaPos, 0).getType();
             Material betaTestMaterial = event.getBlock().getRelative(0, betaPos, 0).getType();
 
+            Player player = event.getPlayer();
             if (alphaMaterial == alphaTestMaterial && betaMaterial == betaTestMaterial) {
-                games.add(GameState.from(event.getPlayer(), event.getBlock().getRelative(0, -index, 0)));
+                games.add(GameState.from(player, event.getBlock().getRelative(0, -index, 0)));
             }
+
+            player.getServer().getScheduler().runTaskLater(MinePlugin.instance, () -> {
+                List<Material> trash = List.of(
+                        // Seeds
+                        Material.WHEAT_SEEDS,
+                        // Tree Drops
+                        Material.SPRUCE_SAPLING,
+                        // Flowers
+                        Material.POPPY
+                );
+                for (Entity e : player.getServer().selectEntities(player.getServer().getConsoleSender(), "@e[type=item]")) {
+                    if (e instanceof Item item) {
+                        if (trash.contains(item.getItemStack().getType())) {
+                            item.remove();
+                        }
+                    }
+                }
+            }, 1);
         }
     }
 
@@ -57,12 +78,16 @@ public class GameListener implements Listener {
                     if (!players.isEmpty()) {
                         Player player = players.getFirst();
                         Server server = player.getServer();
+                        int gameIndex = i;
                         server.getScheduler().runTaskLater(
                                 MinePlugin.instance,
-                                game::finish,
+                                () -> {
+                                    if (game.uncover(block.getX(), block.getZ())) {
+                                        games.remove(gameIndex);
+                                    }
+                                },
                                 1
                         );
-                        games.remove(i);
                     }
                     break;
                 }
