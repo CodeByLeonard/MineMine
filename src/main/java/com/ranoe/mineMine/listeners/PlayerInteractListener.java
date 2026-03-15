@@ -1,6 +1,6 @@
 package com.ranoe.mineMine.listeners;
 
-import com.ranoe.mineMine.util.MineLogic;
+import com.ranoe.mineMine.util.MineUtils;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
@@ -47,15 +47,15 @@ public class PlayerInteractListener implements Listener {
 
         if (block.getType() == Material.SMOOTH_STONE) {
             if (event.getAction().isLeftClick()) {
-                MineLogic.revealBlock(block);
+                MineUtils.revealBlock(block);
             } else if (event.getAction().isRightClick()) {
-                MineLogic.flagBlock(block);
+                MineUtils.flagBlock(block);
             }
         } else if (block.getType() == Material.LODESTONE) {
             if (event.getAction().isLeftClick()) {
-                player.sendRichMessage(MineLogic.getPrefix() + "You have placed a flag there!");
+                player.sendRichMessage(MineUtils.getPrefix() + "You have placed a flag there!");
             } else if (event.getAction().isRightClick()) {
-                MineLogic.unflagBlock(block);
+                MineUtils.unflagBlock(block);
             }
         }
     }
