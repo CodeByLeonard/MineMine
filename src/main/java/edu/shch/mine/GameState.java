@@ -186,7 +186,14 @@ public class GameState {
             if (win) {
                 player.getWorld().spawn(player.getLocation(), Firework.class, (firework) -> {
                     FireworkMeta meta = firework.getFireworkMeta();
-                    meta.addEffect(FireworkEffect.builder().trail(true).withColor(Color.RED).build());
+                    FireworkEffect effect = FireworkEffect.builder()
+                        .withTrail().withColor(Color.RED)
+                        .withFlicker().withColor(Color.PURPLE)
+                        .withFade(Color.MAROON)
+                        .build();
+                    meta.setPower(8);
+                    meta.addEffect(effect);
+                    firework.setFireworkMeta(meta);
                 });
             } else {
                 player.getLocation().createExplosion(16f, false, false);
