@@ -1,11 +1,16 @@
 package edu.shch.mine;
 
-import org.bukkit.Chunk;
-import org.bukkit.Material;
+import org.bukkit.*;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
 import org.bukkit.block.data.BlockData;
+import org.bukkit.boss.BarColor;
+import org.bukkit.boss.BarFlag;
+import org.bukkit.boss.BarStyle;
+import org.bukkit.boss.BossBar;
+import org.bukkit.entity.Firework;
 import org.bukkit.entity.Player;
+import org.bukkit.inventory.meta.FireworkMeta;
 import org.bukkit.util.Vector;
 import org.joml.Vector2i;
 
@@ -17,6 +22,9 @@ import java.util.function.BiConsumer;
 public class GameState {
     Player player;
     Block locator;
+    BossBar bar;
+    int mines = 32;
+    int flagsPlaced = 0;
 
     ArrayList<BlockData> healCache;
     GameField[][] field = new GameField[16][16];
@@ -27,7 +35,7 @@ public class GameState {
         this.locator = locator;
     }
 
-    public void toggleFlag(int x, int z) {
+    public boolean toggleFlag(int x, int z) {
         int blockChunkX = ((x % 16) + 16) % 16;
         int blockChunkZ = ((z % 16) + 16) % 16;
         int y = locator.getY() + 1;
@@ -37,18 +45,28 @@ public class GameState {
             this.player.getServer().getScheduler().runTaskLater(
                 MinePlugin.instance,
                 () -> locator.getChunk().getBlock(blockChunkX, y, blockChunkZ)
-                        .setType(GameField.UNKNOWN.block),
+                    .setType(GameField.UNKNOWN.block),
                 1
             );
+            flagsPlaced--;
         } else if (states[blockChunkX][blockChunkZ] == FieldState.COVERED) {
             states[blockChunkX][blockChunkZ] = FieldState.FLAGGED;
             this.player.getServer().getScheduler().runTaskLater(
                 MinePlugin.instance,
                 () -> locator.getChunk().getBlock(blockChunkX, y, blockChunkZ)
-                        .setType(GameField.FLAG.block),
+                    .setType(GameField.FLAG.block),
                 1
             );
+            flagsPlaced++;
+
+            if (flagsPlaced == mines && checkWinCondition()) {
+                finish(true);
+                return true;
+            }
         }
+
+        this.bar.setProgress(1 - (double) flagsPlaced / mines);
+        return false;
     }
 
     public boolean uncover(Player player, int x, int z) {
@@ -80,6 +98,7 @@ public class GameState {
                         if (f == GameField.NONE && states[coords.x][coords.y] == FieldState.COVERED) {
                             cleared.add(coords);
                         } else if (states[coords.x][coords.y] == FieldState.COVERED) {
+                            states[coords.x][coords.y] = FieldState.UNCOVERED;
                             chunk.getBlock(coords.x, y + 1, coords.y).setType(Material.AIR);
                             chunk.getBlock(coords.x, y, coords.y).setType(field[coords.x][coords.y].block);
                         }
@@ -91,18 +110,48 @@ public class GameState {
                 origin.setType(gameField.block);
                 states[blockChunkX][blockChunkZ] = FieldState.UNCOVERED;
             }
-            player.setVelocity(new Vector(0, 1f, 0));
+
+            boolean win = checkWinCondition();
+
+            if (win) {
+                finish(true);
+                return true;
+            } else {
+                player.setVelocity(new Vector(0, 1f, 0));
+            }
         }
         return false;
     }
 
+    private boolean checkWinCondition() {
+        boolean coveredNonMines = true;
+        boolean flaggedMines = true;
+        outerCheck:
+        for (int xi = 0; xi < 16; xi++) {
+            for (int zi = 0; zi < 16; zi++) {
+                if (field[xi][zi].ordinal() <= GameField.EIGHT.ordinal() && states[xi][zi] != FieldState.UNCOVERED) {
+                    coveredNonMines = false;
+                }
+                if (field[xi][zi] == GameField.MINE && states[xi][zi] != FieldState.FLAGGED) {
+                    flaggedMines = false;
+                }
+                if (!coveredNonMines && !flaggedMines) {
+                    break outerCheck;
+                }
+            }
+        }
+        boolean win = coveredNonMines || flaggedMines;
+        return win;
+    }
+
     public void finish(boolean win) {
+        MinePlugin.instance.getLogger().info("Finished Game: %s".formatted(win));
         Chunk chunk = locator.getChunk();
         int height = locator.getY();
         int maxHeight = locator.getWorld().getMaxHeight();
         for (int x = 0; x < 16; x++) {
             for (int z = 0; z < 16; z++) {
-                chunk.getBlock(x, height+1, z).setType(Material.AIR);
+                chunk.getBlock(x, height + 1, z).setType(Material.AIR);
             }
         }
 
@@ -115,15 +164,45 @@ public class GameState {
         }
 
         player.teleport(locator.getLocation().toCenterLocation());
-        if (win) {
-            player.sendMessage("'grats!");
+        player.getServer().getScheduler().runTaskLater(MinePlugin.instance, () -> {
+            bar.removeAll();
+            if (win) {
+                player.getWorld().spawn(player.getLocation(), Firework.class, (firework) -> {
+                    FireworkMeta meta = firework.getFireworkMeta();
+                    meta.addEffect(FireworkEffect.builder().trail(true).withColor(Color.RED).build());
+                });
+            } else {
+                player.getLocation().createExplosion(12f, false, false);
+            }
+        }, 1);
+    }
+
+    public void revealMines(Player player) {
+        Chunk chunk = locator.getChunk();
+
+        for (int x = 0; x < 16; x++) {
+            for (int z = 0; z < 16; z++) {
+                if (field[x][z] == GameField.MINE) {
+                    Particle.SOUL_FIRE_FLAME.builder()
+                        .location(
+                            chunk.getBlock(x, locator.getY(), z)
+                                .getRelative(0, 2, 0)
+                                .getLocation().toCenterLocation()
+                        )
+                        .offset(0, .2, 0)
+                        .count(0)
+                        .extra(0.1)
+                        .receivers(player)
+                        .spawn();
+                }
+            }
         }
     }
 
     public static GameState from(Player player, Block block) {
         GameState state = new GameState(player, block);
         Chunk chunk = block.getChunk();
-        state.healCache =  new ArrayList<>();
+        state.healCache = new ArrayList<>();
 
         int height = block.getY();
         int maxHeight = chunk.getWorld().getMaxHeight();
@@ -158,6 +237,8 @@ public class GameState {
 
         // Place the Minesweeper Field
         naiveGeneration(state);
+        state.bar = Bukkit.createBossBar("Mines", BarColor.RED, BarStyle.SEGMENTED_10, BarFlag.CREATE_FOG);
+        state.bar.addPlayer(player);
 
         for (int x = 0; x < 16; x++) {
             for (int z = 0; z < 16; z++) {
@@ -183,14 +264,12 @@ public class GameState {
         }
 
 
-
         return state;
     }
 
     private static void naiveGeneration(GameState state) {
-        int mines = 32;
         int minesPlaced = 0;
-        double chance = mines / (16. * 16);
+        double chance = state.mines / (16. * 16);
 
         Block block = state.locator;
         Chunk chunk = block.getChunk();
@@ -198,7 +277,8 @@ public class GameState {
         int blockChunkZ = ((block.getZ() % 16) + 16) % 16;
         int yLevel = block.getY();
 
-        while (minesPlaced < mines) {
+        outerLoop:
+        while (minesPlaced < state.mines) {
             for (int x = 0; x < 16; x++) {
                 for (int z = 0; z < 16; z++) {
                     if (state.field[x][z] == GameField.MINE || (blockChunkX == x && blockChunkZ == z)) {
@@ -208,6 +288,8 @@ public class GameState {
                         state.field[x][z] = GameField.MINE;
                         minesPlaced++;
                     }
+
+                    if (minesPlaced == state.mines) break outerLoop;
                 }
             }
         }
@@ -239,10 +321,10 @@ public class GameState {
     }
 
     private static void forEachSurrounding(GameField[][] field, int x, int z, BiConsumer<GameField, Vector2i> mapper) {
-        int minX = Math.max(0, x-1);
-        int maxX = Math.min(x+1, 16-1);
-        int minZ = Math.max(0, z-1);
-        int maxZ = Math.min(z+1, 16-1);
+        int minX = Math.max(0, x - 1);
+        int maxX = Math.min(x + 1, 16 - 1);
+        int minZ = Math.max(0, z - 1);
+        int maxZ = Math.min(z + 1, 16 - 1);
         for (int ix = minX; ix <= maxX; ix++) {
             for (int iz = minZ; iz <= maxZ; iz++) {
                 mapper.accept(field[ix][iz], new Vector2i(ix, iz));

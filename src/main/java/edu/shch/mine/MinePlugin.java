@@ -12,8 +12,8 @@ public class MinePlugin extends JavaPlugin implements Listener {
     public void onEnable() {
         instance = this;
         Bukkit.getPluginManager().registerEvents(
-                GameListener.getInstance(),
-                this
+            GameListener.getInstance(),
+            this
         );
     }
 }
