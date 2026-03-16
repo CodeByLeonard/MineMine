@@ -1,0 +1,19 @@
+{
+  "model": {
+    "type": "select",
+    "property": "custom_model_data",
+    "fallback": {
+      "type": "model",
+      "model": "minecraft:block/green_concrete"
+    },
+    "cases": [
+      {
+        "when": "mine",
+        "model": {
+          "type": "model",
+          "model": "item/mine_two"
+        }
+      }
+    ]
+  }
+}

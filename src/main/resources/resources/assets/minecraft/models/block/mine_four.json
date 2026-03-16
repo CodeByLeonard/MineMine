@@ -1,0 +1,7 @@
+{
+  "parent": "minecraft:block/cube_column",
+  "textures": {
+    "side": "minecraft:block/purple_concrete",
+    "end": "block/field_four"
+  }
+}

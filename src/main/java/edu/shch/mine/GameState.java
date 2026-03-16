@@ -9,7 +9,9 @@ import org.bukkit.boss.BarFlag;
 import org.bukkit.boss.BarStyle;
 import org.bukkit.boss.BossBar;
 import org.bukkit.entity.Firework;
+import org.bukkit.entity.ItemDisplay;
 import org.bukkit.entity.Player;
+import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.FireworkMeta;
 import org.bukkit.util.Vector;
 import org.joml.Vector2i;
@@ -33,6 +35,7 @@ public class GameState {
     ArrayList<BlockData> healCache;
     GameField[][] field = new GameField[16][16];
     FieldState[][] states = new FieldState[16][16];
+    List<ItemDisplay> entities = new ArrayList<>();
 
     private GameState(Player player, Block locator) {
         this.player = player;
@@ -89,21 +92,27 @@ public class GameState {
                     Vector2i item = cleared.removeFirst();
                     states[item.x][item.y] = FieldState.UNCOVERED;
                     chunk.getBlock(item.x, y + 1, item.y).setType(Material.AIR);
-                    chunk.getBlock(item.x, y, item.y).setType(gameField.block);
+                    Block block = chunk.getBlock(item.x, y, item.y);
+                    block.setType(Material.BARRIER);
+                    entities.add(gameField.spawnItemDisplay(block));
                     forEachSurrounding(field, item.x, item.y, (f, coords) -> {
                         if (f == GameField.NONE && states[coords.x][coords.y] == FieldState.COVERED) {
                             cleared.add(coords);
                         } else if (states[coords.x][coords.y] == FieldState.COVERED) {
                             states[coords.x][coords.y] = FieldState.UNCOVERED;
                             chunk.getBlock(coords.x, y + 1, coords.y).setType(Material.AIR);
-                            chunk.getBlock(coords.x, y, coords.y).setType(field[coords.x][coords.y].block);
+                            Block recBlock = chunk.getBlock(coords.x, y, coords.y);
+                            GameField recField = field[coords.x][coords.y];
+                            recBlock.setType(Material.BARRIER);
+                            entities.add(recField.spawnItemDisplay(recBlock));
                         }
                     });
                 }
             } else {
                 // Remove the Pressure Plate
                 origin.getRelative(BlockFace.UP).setType(Material.AIR);
-                origin.setType(gameField.block);
+                origin.setType(Material.BARRIER);
+                entities.add(gameField.spawnItemDisplay(origin));
                 states[blockChunkX][blockChunkZ] = FieldState.UNCOVERED;
             }
 
@@ -155,6 +164,11 @@ public class GameState {
         player.teleport(locator.getLocation().toCenterLocation());
         defer(() -> {
             bar.removeAll();
+
+            for (ItemDisplay entity : entities) {
+                entity.remove();
+            }
+
             if (win) {
                 player.getWorld().spawn(player.getLocation(), Firework.class, (firework) -> {
                     FireworkMeta meta = firework.getFireworkMeta();

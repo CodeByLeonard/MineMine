@@ -1,6 +1,13 @@
 package edu.shch.mine;
 
 import org.bukkit.Material;
+import org.bukkit.block.Block;
+import org.bukkit.entity.ItemDisplay;
+import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.ItemMeta;
+import org.bukkit.inventory.meta.components.CustomModelDataComponent;
+
+import java.util.List;
 
 public enum GameField {
     NONE(Material.SMOOTH_STONE),
@@ -19,5 +26,24 @@ public enum GameField {
     final Material block;
     GameField(Material block) {
         this.block = block;
+    }
+
+    @SuppressWarnings("UnstableApiUsage")
+    ItemStack getEntityStack() {
+        ItemStack stack = ItemStack.of(this.block);
+        ItemMeta meta = stack.getItemMeta();
+        CustomModelDataComponent cmd = meta.getCustomModelDataComponent();
+        cmd.setStrings(List.of("mine"));
+        meta.setCustomModelDataComponent(cmd);
+        stack.setItemMeta(meta);
+        return stack;
+    }
+
+    ItemDisplay spawnItemDisplay(Block block) {
+        return block.getWorld().spawn(
+            block.getLocation().toCenterLocation(),
+            ItemDisplay.class,
+            entity -> entity.setItemStack(getEntityStack())
+        );
     }
 }

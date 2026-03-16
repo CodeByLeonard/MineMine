@@ -138,7 +138,6 @@ public class GameListener implements Listener {
 
     @EventHandler
     public void equipGlasses(InventoryClickEvent event) {
-        MinePlugin.instance.getLogger().info(event.toString());
         if (event.getInventory().getHolder() instanceof Player player) {
             defer(() -> checkHelmet(player));
         }
