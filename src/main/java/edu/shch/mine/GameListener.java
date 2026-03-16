@@ -1,10 +1,8 @@
 package edu.shch.mine;
 
-import org.bukkit.Bukkit;
-import org.bukkit.Chunk;
-import org.bukkit.Material;
-import org.bukkit.Server;
+import org.bukkit.*;
 import org.bukkit.block.Block;
+import org.bukkit.block.BlockFace;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Item;
 import org.bukkit.entity.ItemDisplay;
@@ -86,7 +84,9 @@ public class GameListener implements Listener {
                             }
                         }
                     }
-                    player.getInventory().addItem(createFlag());
+                    if (!player.getInventory().contains(createFlag())) {
+                        player.getInventory().addItem(createFlag());
+                    }
                 });
             }
         } else if (fieldBlocks.contains(block)) {
@@ -153,18 +153,37 @@ public class GameListener implements Listener {
             GameState game = games.get(i);
             if (game.locator.getChunk().getChunkKey() == player.getChunk().getChunkKey()) {
                 RayTraceResult result = player.rayTraceBlocks(16);
-                if (result == null) continue;
-                Block block = result.getHitBlock();
-                List<Material> flagBlocks = List.of(GameField.UNKNOWN.block, GameField.FLAG.block);
-                if (block != null && flagBlocks.contains(block.getType())) {
-                    defer(() -> {
-                        if (game.toggleFlag(block.getX(), block.getZ())) {
-                            games.remove(game);
-                        } else {
-                            player.getInventory().addItem(createFlag());
-                            event.getItemDrop().remove();
+                if (result != null) {
+                    Block block = result.getHitBlock();
+                    if (block != null) {
+                        if (block.getType() == GameField.UNKNOWN.block) {
+                            defer(() -> {
+                                if (game.toggleFlag(block.getX(), block.getZ())) {
+                                    games.remove(game);
+                                } else {
+                                    player.getInventory().addItem(createFlag());
+                                    event.getItemDrop().remove();
+                                }
+                            });
+                        } else if (block.getType() == GameField.NONE.block) {
+                            Collection<ItemDisplay> displays = block.getRelative(BlockFace.UP)
+                                .getLocation().toCenterLocation()
+                                .getNearbyEntitiesByType(ItemDisplay.class, .1);
+                            if (!displays.isEmpty()) {
+                                ItemDisplay first = displays.stream().findFirst().get();
+                                if (first.getItemStack().getType() == GameField.FLAG.block) {
+                                    defer(() -> {
+                                        if (game.toggleFlag(block.getX(), block.getZ())) {
+                                            games.remove(game);
+                                        } else {
+                                            player.getInventory().addItem(createFlag());
+                                            event.getItemDrop().remove();
+                                        }
+                                    });
+                                }
+                            }
                         }
-                    });
+                    }
                 }
             }
         }

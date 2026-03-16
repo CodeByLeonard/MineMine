@@ -34,7 +34,11 @@ public enum GameField {
         ItemStack stack = ItemStack.of(this.block);
         ItemMeta meta = stack.getItemMeta();
         CustomModelDataComponent cmd = meta.getCustomModelDataComponent();
-        cmd.setStrings(List.of("mine"));
+        if (this.ordinal() <= 8) {
+            cmd.setStrings(List.of("mine"));
+        } else {
+            cmd.setStrings(List.of("flag"));
+        }
         meta.setCustomModelDataComponent(cmd);
         stack.setItemMeta(meta);
         return stack;

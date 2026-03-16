@@ -11,13 +11,11 @@ import org.bukkit.boss.BossBar;
 import org.bukkit.entity.Firework;
 import org.bukkit.entity.ItemDisplay;
 import org.bukkit.entity.Player;
-import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.FireworkMeta;
 import org.bukkit.util.Vector;
 import org.joml.Vector2i;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiConsumer;
@@ -47,17 +45,33 @@ public class GameState {
         int blockChunkZ = ((z % 16) + 16) % 16;
         int y = locator.getY() + 1;
 
+        Block block = locator.getChunk().getBlock(blockChunkX, y, blockChunkZ);
+
         if (states[blockChunkX][blockChunkZ] == FieldState.FLAGGED) {
             states[blockChunkX][blockChunkZ] = FieldState.COVERED;
-            defer(() -> locator.getChunk().getBlock(blockChunkX, y, blockChunkZ)
-                .setType(GameField.UNKNOWN.block));
+            MinePlugin.instance.getLogger().info("Unflagging Field...");
+            defer(() -> {
+                Collection<ItemDisplay> foundEntities = block.getLocation().toCenterLocation()
+                    .getNearbyEntitiesByType(ItemDisplay.class, .1);
+                for (ItemDisplay display : foundEntities) {
+                    entities.remove(display);
+                    display.remove();
+                }
+                block.setType(GameField.UNKNOWN.block);
+            });
             flagsPlaced--;
         } else if (states[blockChunkX][blockChunkZ] == FieldState.COVERED) {
             states[blockChunkX][blockChunkZ] = FieldState.FLAGGED;
-            defer(() -> locator.getChunk().getBlock(blockChunkX, y, blockChunkZ)
-                .setType(GameField.FLAG.block));
+            MinePlugin.instance.getLogger().info("Flagging Field...");
+            defer(() -> {
+                block.setType(Material.AIR);
+                ItemDisplay flag = GameField.FLAG.spawnItemDisplay(block);
+                MinePlugin.instance.getLogger().fine("Flag Box: %s".formatted(flag.getBoundingBox()));
+                flag.setDisplayWidth(1f);
+                flag.setDisplayHeight(1f);
+                entities.add(flag);
+            });
             flagsPlaced++;
-
             if (flagsPlaced == mines && checkWinCondition()) {
                 finish(true);
                 return true;
@@ -85,7 +99,7 @@ public class GameState {
             if (gameField == GameField.NONE) {
                 Chunk chunk = origin.getChunk();
                 // Recursive Clearing
-                List<Vector2i> cleared = new ArrayList<>();
+                TreeSet<Vector2i> cleared = new TreeSet<>(new Utils.Vec2iComparator());
                 cleared.add(new Vector2i(blockChunkX, blockChunkZ));
 
                 while (!cleared.isEmpty()) {
@@ -175,7 +189,7 @@ public class GameState {
                     meta.addEffect(FireworkEffect.builder().trail(true).withColor(Color.RED).build());
                 });
             } else {
-                player.getLocation().createExplosion(12f, false, false);
+                player.getLocation().createExplosion(16f, false, false);
             }
         });
     }
