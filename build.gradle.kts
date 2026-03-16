@@ -35,6 +35,10 @@ dependencies {
         implementation("io.netty:netty-codec-http:4.2.10.Final") {
             because("CVE-2025-67735: Upgrade Netty Codec HTTP from 4.2.7.Final -> 4.2.10.Final")
         }
+
+        implementation("com.mysql:mysql-connector-j:9.6.0") {
+            because("CVE-2025-30706: Upgrade MySQL Connector J from 9.2.0 -> 9.6.0")
+        }
     }
 }
 
