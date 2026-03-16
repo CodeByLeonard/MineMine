@@ -107,6 +107,26 @@ public class GameListener implements Listener {
                     });
                 }
             }
+        } else if (block == GameField.FLAG.block) {
+            Block below = event.getBlock().getRelative(BlockFace.DOWN);
+
+            for (GameState game : games) {
+                if (game.locator.getChunk().getChunkKey() == below.getChunk().getChunkKey()) {
+                    if (below.getType() == GameField.NONE.block) {
+                        if (game.toggleFlag(event.getBlock().getX(), event.getBlock().getZ())) {
+                            defer(() -> games.remove(game));
+                        } else {
+                            event.setCancelled(true);
+                        }
+                    } else if (below.getType() == GameField.UNKNOWN.block) {
+                        if (game.toggleFlag(below.getX(), below.getZ())) {
+                            defer(() -> games.remove(game));
+                        } else {
+                            event.setCancelled(true);
+                        }
+                    }
+                }
+            }
         }
     }
 
