@@ -49,7 +49,7 @@ public class GameState {
 
         if (states[blockChunkX][blockChunkZ] == FieldState.FLAGGED) {
             states[blockChunkX][blockChunkZ] = FieldState.COVERED;
-            MinePlugin.instance.getLogger().info("Unflagging Field...");
+            MineSweeperPlugin.instance.getLogger().info("Unflagging Field...");
             defer(() -> {
                 Collection<ItemDisplay> foundEntities = block.getLocation().toCenterLocation()
                     .getNearbyEntitiesByType(ItemDisplay.class, .1);
@@ -62,11 +62,11 @@ public class GameState {
             flagsPlaced--;
         } else if (states[blockChunkX][blockChunkZ] == FieldState.COVERED) {
             states[blockChunkX][blockChunkZ] = FieldState.FLAGGED;
-            MinePlugin.instance.getLogger().info("Flagging Field...");
+            MineSweeperPlugin.instance.getLogger().info("Flagging Field...");
             defer(() -> {
                 block.setType(Material.AIR);
                 ItemDisplay flag = GameField.FLAG.spawnItemDisplay(block);
-                MinePlugin.instance.getLogger().fine("Flag Box: %s".formatted(flag.getBoundingBox()));
+                MineSweeperPlugin.instance.getLogger().fine("Flag Box: %s".formatted(flag.getBoundingBox()));
                 flag.setDisplayWidth(1f);
                 flag.setDisplayHeight(1f);
                 entities.add(flag);
@@ -158,7 +158,7 @@ public class GameState {
     }
 
     public void finish(boolean win) {
-        MinePlugin.instance.getLogger().info("Finished Game: %s".formatted(win));
+        MineSweeperPlugin.instance.getLogger().info("Finished Game: %s".formatted(win));
         Chunk chunk = locator.getChunk();
         int height = locator.getY();
         int maxHeight = locator.getWorld().getMaxHeight();

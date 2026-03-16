@@ -6,8 +6,8 @@ import java.util.Comparator;
 
 public class Utils {
     public static void defer(Runnable action) {
-        MinePlugin.instance.getServer().getScheduler().runTaskLater(
-            MinePlugin.instance,
+        MineSweeperPlugin.instance.getServer().getScheduler().runTaskLater(
+            MineSweeperPlugin.instance,
             action,
             1
         );

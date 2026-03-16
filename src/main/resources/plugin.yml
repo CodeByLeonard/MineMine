@@ -1,6 +1,6 @@
-name: MinePlugin
+name: MineSweeoer
 version: 0.1.0
-main: edu.shch.mine.MinePlugin
+main: edu.shch.mine.MineSweeperPlugin
 description: Minesweeper in Minecraft
 author: Me
 website: https://c0mpl3x.one

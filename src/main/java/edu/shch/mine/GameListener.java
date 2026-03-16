@@ -147,7 +147,7 @@ public class GameListener implements Listener {
             event.getClickedBlock() != null &&
             event.getClickedBlock().getType() == GameField.UNKNOWN.block
         ) {
-            MinePlugin.instance.getLogger().info("Uncovering Field...");
+            MineSweeperPlugin.instance.getLogger().info("Uncovering Field...");
             Block block = event.getClickedBlock();
             for (int i = 0; i < games.size(); i++) {
                 GameState game = games.get(i);
@@ -229,7 +229,7 @@ public class GameListener implements Listener {
 
         if (!this.playerTasks.containsKey(player)) {
             this.playerTasks.put(player, Bukkit.getScheduler().runTaskTimer(
-                MinePlugin.instance,
+                MineSweeperPlugin.instance,
                 () -> {
                     if (xray.get(player)) {
                         Chunk chunk = player.getChunk();

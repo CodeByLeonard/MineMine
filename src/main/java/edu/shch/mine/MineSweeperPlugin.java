@@ -5,8 +5,8 @@ import org.bukkit.event.Listener;
 import org.bukkit.plugin.java.JavaPlugin;
 
 @SuppressWarnings("unused")
-public class MinePlugin extends JavaPlugin implements Listener {
-    public static MinePlugin instance;
+public class MineSweeperPlugin extends JavaPlugin implements Listener {
+    public static MineSweeperPlugin instance;
 
     @Override
     public void onEnable() {
