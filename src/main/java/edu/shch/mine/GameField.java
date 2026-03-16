@@ -8,6 +8,7 @@ import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.inventory.meta.components.CustomModelDataComponent;
 
 import java.util.List;
+import java.util.Optional;
 
 public enum GameField {
     NONE(Material.SMOOTH_STONE),
@@ -45,5 +46,14 @@ public enum GameField {
             ItemDisplay.class,
             entity -> entity.setItemStack(getEntityStack())
         );
+    }
+
+    static Optional<GameField> fromMaterial(Material material) {
+        for (GameField field : GameField.values()) {
+            if (field.block == material) {
+                return Optional.of(field);
+            }
+        }
+        return Optional.empty();
     }
 }

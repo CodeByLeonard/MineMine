@@ -7,10 +7,12 @@ import org.bukkit.Server;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Item;
+import org.bukkit.entity.ItemDisplay;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
+import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.player.PlayerDropItemEvent;
@@ -24,10 +26,7 @@ import org.bukkit.util.RayTraceResult;
 import org.jetbrains.annotations.Nullable;
 import org.jspecify.annotations.NonNull;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import static edu.shch.mine.Utils.defer;
 
@@ -38,23 +37,29 @@ public class GameListener implements Listener {
     private final Map<Player, Boolean> xray = new HashMap<>();
     private final Map<Player, BukkitTask> playerTasks = new HashMap<>();
 
+    private static final List<Material> gameStartBlocks = List.of(
+        Material.TNT,
+        Material.SMOOTH_STONE,
+        Material.HEAVY_WEIGHTED_PRESSURE_PLATE
+    );
+
+    private static final List<Material> fieldBlocks = Arrays.stream(GameField.values())
+        .skip(1)
+        .takeWhile(f -> f.ordinal() <= 8)
+        .map(f -> f.block)
+        .toList();
+
     private GameListener() {}
 
     @EventHandler
     public void initiateGame(BlockPlaceEvent event) {
-        List<Material> blocks = List.of(
-            Material.TNT,
-            Material.SMOOTH_STONE,
-            Material.HEAVY_WEIGHTED_PRESSURE_PLATE
-        );
-
         Material block = event.getBlock().getType();
-        if (blocks.contains(block)) {
-            int index = blocks.indexOf(block);
-            int alphaIndex = (index + 1) % blocks.size();
-            int betaIndex = (index + 2) % blocks.size();
-            Material alphaMaterial = blocks.get(alphaIndex);
-            Material betaMaterial = blocks.get(betaIndex);
+        if (gameStartBlocks.contains(block)) {
+            int index = gameStartBlocks.indexOf(block);
+            int alphaIndex = (index + 1) % gameStartBlocks.size();
+            int betaIndex = (index + 2) % gameStartBlocks.size();
+            Material alphaMaterial = gameStartBlocks.get(alphaIndex);
+            Material betaMaterial = gameStartBlocks.get(betaIndex);
             int alphaPos = alphaIndex - index;
             int betaPos = betaIndex - index;
 
@@ -83,6 +88,35 @@ public class GameListener implements Listener {
                     }
                     player.getInventory().addItem(createFlag());
                 });
+            }
+        } else if (fieldBlocks.contains(block)) {
+            ItemStack item = event.getItemInHand();
+            ItemMeta meta = item.getItemMeta();
+            if (meta.hasCustomModelDataComponent()) {
+                //noinspection UnstableApiUsage
+                CustomModelDataComponent cmd = meta.getCustomModelDataComponent();
+                //noinspection UnstableApiUsage
+                if (cmd.getStrings().contains("mine")) {
+                    event.setCancelled(true);
+                    defer(() -> {
+                        Block replacedBlock = event.getBlock();
+                        replacedBlock.setType(Material.BARRIER);
+                        //noinspection OptionalGetWithoutIsPresent
+                        GameField field = GameField.fromMaterial(block).get();
+                        field.spawnItemDisplay(replacedBlock);
+                    });
+                }
+            }
+        }
+    }
+
+    @EventHandler
+    public void destroyEntityOnBreak(BlockBreakEvent event) {
+        if (event.getBlock().getType() == Material.BARRIER) {
+            Collection<ItemDisplay> displays = event.getBlock().getLocation()
+                .toCenterLocation().getNearbyEntitiesByType(ItemDisplay.class, .1);
+            for (ItemDisplay display : displays) {
+                display.remove();
             }
         }
     }
