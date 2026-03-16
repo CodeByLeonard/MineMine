@@ -27,6 +27,10 @@ dependencies {
         implementation("org.apache.commons:commons-lang3:3.20.0") {
             because("CVE-2025-48924: Upgrade Apache Commons Lang from 3.12.0 -> 3.20.0")
         }
+
+        implementation("org.apache.logging.log4j:log4j-core:2.25.3") {
+            because("CVE-2025-68161: Upgrade Log4J-Core from 2.25.2 -> 2.25.3")
+        }
     }
 }
 
