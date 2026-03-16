@@ -1,5 +1,6 @@
 plugins {
     id("java")
+    id("io.papermc.paperweight.userdev") version "2.0.0-beta.19"
     id("xyz.jpenilla.run-paper") version "3.0.2"
 }
 
@@ -15,7 +16,7 @@ repositories {
 }
 
 dependencies {
-    compileOnly("io.papermc.paper:paper-api:1.21.11-R0.1-SNAPSHOT")
+    paperweight.paperDevBundle("1.21.11-R0.1-SNAPSHOT")
     testImplementation(platform("org.junit:junit-bom:5.10.0"))
     testImplementation("org.junit.jupiter:junit-jupiter")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
@@ -34,8 +35,14 @@ tasks {
         useJUnitPlatform()
     }
 
+    paperweight {
+        reobfArtifactConfiguration = io.papermc.paperweight.userdev.ReobfArtifactConfiguration.MOJANG_PRODUCTION
+    }
+
     runServer {
         minecraftVersion("1.21.11")
-        jvmArgs("-javaagent:${project(":jdk-patches").tasks.jar.get().archiveFile.get().asFile.absolutePath}")
+        val agent = project(":jdk-patches").tasks.jar.get().archiveFile.get().asFile.absolutePath
+        jvmArgs("-javaagent:$agent")
+        args("--nojline")
     }
 }
