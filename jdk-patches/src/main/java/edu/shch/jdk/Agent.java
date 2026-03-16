@@ -12,6 +12,7 @@ import java.lang.instrument.UnmodifiableClassException;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 
+@SuppressWarnings("unused")
 public class Agent {
     private static void error(String msg) {
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("HH:mm:ss");

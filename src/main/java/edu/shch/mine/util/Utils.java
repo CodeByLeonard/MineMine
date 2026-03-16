@@ -1,6 +1,6 @@
-package edu.shch.mine;
+package edu.shch.mine.util;
 
-import org.joml.Vector2i;
+import edu.shch.mine.MineSweeperPlugin;
 
 import java.io.*;
 import java.net.*;
@@ -9,7 +9,6 @@ import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Comparator;
 import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Stream;
@@ -17,7 +16,7 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
 public class Utils {
-    static final UUID TEXTURE_PACK_ID = UUID.fromString("8b14bced-a79b-3645-8349-ea23ad0781aa");
+    public static final UUID TEXTURE_PACK_ID = UUID.fromString("8b14bced-a79b-3645-8349-ea23ad0781aa");
 
     public static void defer(Runnable action) {
         MineSweeperPlugin.instance.getServer().getScheduler().runTaskLater(
@@ -27,7 +26,7 @@ public class Utils {
         );
     }
 
-    static void serveResources(int port) {
+    public static void serveResources(int port) {
         new Thread(() -> {
             try (ServerSocket ss = new ServerSocket(port)) {
                 // Pre-Flight Request for Hash + Client Request
@@ -99,14 +98,6 @@ public class Utils {
             System.err.println("Couldn't create ZipOutputStream.");
         } catch (URISyntaxException e) {
             System.err.printf("Invalid URI: %s%n", e.getMessage());
-        }
-    }
-
-    static class Vec2iComparator implements Comparator<Vector2i> {
-        @Override
-        public int compare(Vector2i a, Vector2i b) {
-            int initial = Integer.compare(a.x, b.x);
-            return initial == 0 ? Integer.compare(a.y, b.y) : initial;
         }
     }
 }

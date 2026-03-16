@@ -1,5 +1,7 @@
-package edu.shch.mine;
+package edu.shch.mine.game;
 
+import edu.shch.mine.MineSweeperPlugin;
+import edu.shch.mine.util.Vec2iComparator;
 import org.bukkit.*;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
@@ -21,19 +23,19 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 
-import static edu.shch.mine.Utils.defer;
+import static edu.shch.mine.util.Utils.defer;
 
 public class GameState {
-    Player player;
-    Block locator;
+    final Player player;
+    final Block locator;
+    final int mines = 32;
     BossBar bar;
-    int mines = 32;
     int flagsPlaced = 0;
 
-    ArrayList<BlockData> healCache;
-    GameField[][] field = new GameField[16][16];
-    FieldState[][] states = new FieldState[16][16];
-    List<ItemDisplay> entities = new ArrayList<>();
+    final ArrayList<BlockData> healCache = new ArrayList<>();
+    final GameField[][] field = new GameField[16][16];
+    final FieldState[][] states = new FieldState[16][16];
+    final List<ItemDisplay> entities = new ArrayList<>();
 
     private GameState(Player player, Block locator) {
         this.player = player;
@@ -99,7 +101,7 @@ public class GameState {
             if (gameField == GameField.NONE) {
                 Chunk chunk = origin.getChunk();
                 // Recursive Clearing
-                TreeSet<Vector2i> cleared = new TreeSet<>(new Utils.Vec2iComparator());
+                TreeSet<Vector2i> cleared = new TreeSet<>(new Vec2iComparator());
                 cleared.add(new Vector2i(blockChunkX, blockChunkZ));
 
                 while (!cleared.isEmpty()) {
@@ -226,7 +228,6 @@ public class GameState {
     public static GameState from(Player player, Block block) {
         GameState state = new GameState(player, block);
         Chunk chunk = block.getChunk();
-        state.healCache = new ArrayList<>();
 
         int height = block.getY();
         int maxHeight = chunk.getWorld().getMaxHeight();

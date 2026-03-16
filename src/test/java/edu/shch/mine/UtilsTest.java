@@ -1,5 +1,6 @@
 package edu.shch.mine;
 
+import edu.shch.mine.util.Utils;
 import org.junit.jupiter.api.Test;
 
 import java.io.File;

@@ -1,4 +1,4 @@
-package edu.shch.mine;
+package edu.shch.mine.game;
 
 import org.bukkit.Material;
 import org.bukkit.block.Block;

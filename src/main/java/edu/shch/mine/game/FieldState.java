@@ -1,4 +1,4 @@
-package edu.shch.mine;
+package edu.shch.mine.game;
 
 public enum FieldState {
     COVERED,

@@ -1,5 +1,7 @@
-package edu.shch.mine;
+package edu.shch.mine.game;
 
+import edu.shch.mine.MineSweeperPlugin;
+import edu.shch.mine.util.Utils;
 import net.kyori.adventure.resource.ResourcePackInfo;
 import net.kyori.adventure.resource.ResourcePackRequest;
 import org.bukkit.*;
@@ -32,7 +34,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
-import static edu.shch.mine.Utils.defer;
+import static edu.shch.mine.util.Utils.defer;
 
 public class GameListener implements Listener {
     private static GameListener instance;
