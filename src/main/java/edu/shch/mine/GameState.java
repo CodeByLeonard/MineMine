@@ -16,8 +16,12 @@ import org.joml.Vector2i;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiConsumer;
+import java.util.function.BiFunction;
+
+import static edu.shch.mine.Utils.defer;
 
 public class GameState {
     Player player;
@@ -42,21 +46,13 @@ public class GameState {
 
         if (states[blockChunkX][blockChunkZ] == FieldState.FLAGGED) {
             states[blockChunkX][blockChunkZ] = FieldState.COVERED;
-            this.player.getServer().getScheduler().runTaskLater(
-                MinePlugin.instance,
-                () -> locator.getChunk().getBlock(blockChunkX, y, blockChunkZ)
-                    .setType(GameField.UNKNOWN.block),
-                1
-            );
+            defer(() -> locator.getChunk().getBlock(blockChunkX, y, blockChunkZ)
+                .setType(GameField.UNKNOWN.block));
             flagsPlaced--;
         } else if (states[blockChunkX][blockChunkZ] == FieldState.COVERED) {
             states[blockChunkX][blockChunkZ] = FieldState.FLAGGED;
-            this.player.getServer().getScheduler().runTaskLater(
-                MinePlugin.instance,
-                () -> locator.getChunk().getBlock(blockChunkX, y, blockChunkZ)
-                    .setType(GameField.FLAG.block),
-                1
-            );
+            defer(() -> locator.getChunk().getBlock(blockChunkX, y, blockChunkZ)
+                .setType(GameField.FLAG.block));
             flagsPlaced++;
 
             if (flagsPlaced == mines && checkWinCondition()) {
@@ -124,24 +120,18 @@ public class GameState {
     }
 
     private boolean checkWinCondition() {
-        boolean coveredNonMines = true;
-        boolean flaggedMines = true;
-        outerCheck:
-        for (int xi = 0; xi < 16; xi++) {
-            for (int zi = 0; zi < 16; zi++) {
-                if (field[xi][zi].ordinal() <= GameField.EIGHT.ordinal() && states[xi][zi] != FieldState.UNCOVERED) {
-                    coveredNonMines = false;
-                }
-                if (field[xi][zi] == GameField.MINE && states[xi][zi] != FieldState.FLAGGED) {
-                    flaggedMines = false;
-                }
-                if (!coveredNonMines && !flaggedMines) {
-                    break outerCheck;
-                }
+        AtomicBoolean coveredNonMines = new AtomicBoolean(true);
+        AtomicBoolean flaggedMines = new AtomicBoolean(true);
+        forEach(field, (field, coords) -> {
+            if (field.ordinal() <= GameField.EIGHT.ordinal() && states[coords.x][coords.y] != FieldState.UNCOVERED) {
+                coveredNonMines.set(false);
             }
-        }
-        boolean win = coveredNonMines || flaggedMines;
-        return win;
+            if (field == GameField.MINE && states[coords.x][coords.y] != FieldState.FLAGGED) {
+                flaggedMines.set(false);
+            }
+            return coveredNonMines.get() || flaggedMines.get();
+        });
+        return coveredNonMines.get() || flaggedMines.get();
     }
 
     public void finish(boolean win) {
@@ -149,11 +139,10 @@ public class GameState {
         Chunk chunk = locator.getChunk();
         int height = locator.getY();
         int maxHeight = locator.getWorld().getMaxHeight();
-        for (int x = 0; x < 16; x++) {
-            for (int z = 0; z < 16; z++) {
-                chunk.getBlock(x, height + 1, z).setType(Material.AIR);
-            }
-        }
+        forEach(field, (_, coords) -> {
+            chunk.getBlock(coords.x, height + 1, coords.y).setType(Material.AIR);
+            return true;
+        });
 
         for (int y = height; y < maxHeight; y++) {
             for (int x = 15; x >= 0; x--) {
@@ -164,7 +153,7 @@ public class GameState {
         }
 
         player.teleport(locator.getLocation().toCenterLocation());
-        player.getServer().getScheduler().runTaskLater(MinePlugin.instance, () -> {
+        defer(() -> {
             bar.removeAll();
             if (win) {
                 player.getWorld().spawn(player.getLocation(), Firework.class, (firework) -> {
@@ -174,7 +163,7 @@ public class GameState {
             } else {
                 player.getLocation().createExplosion(12f, false, false);
             }
-        }, 1);
+        });
     }
 
     public void revealMines(Player player) {
@@ -213,26 +202,26 @@ public class GameState {
 
         // Retrieve Block Data for all Blocks in Chunk
         for (int y = maxHeight - 1; y >= height; y--) {
-            for (int x = 0; x < 16; x++) {
-                for (int z = 0; z < 16; z++) {
-                    BlockData data = chunk.getBlock(x, y, z).getBlockData();
-                    if (x == blockChunkX && z == blockChunkZ && y <= height + 3) {
-                        chunk.getBlock(x, y, z).setType(Material.AIR);
-                        data = chunk.getBlock(x, y, z).getBlockData();
-                    }
-                    // TODO: (Re)store NBT as well, so that chests can be backed up
-                    state.healCache.add(data);
+            int currentHeight = y;
+            forEach(state.field, (_, coords) -> {
+                BlockData data = chunk.getBlock(coords.x, currentHeight, coords.y).getBlockData();
+                if (coords.x == blockChunkX && coords.y == blockChunkZ && currentHeight <= height + 3) {
+                    chunk.getBlock(coords.x, currentHeight, coords.y).setType(Material.AIR);
+                    data = chunk.getBlock(coords.x, currentHeight, coords.y).getBlockData();
                 }
-            }
+                // TODO: (Re)store NBT as well, so that chests can be backed up
+                state.healCache.add(data);
+                return true;
+            });
         }
 
         // Void All Blocks (separate loop due to issues with leaves, snow, etc.)
         for (int y = maxHeight - 1; y >= height + 2; y--) {
-            for (int x = 0; x < 16; x++) {
-                for (int z = 0; z < 16; z++) {
-                    chunk.getBlock(x, y, z).setType(Material.AIR);
-                }
-            }
+            int currentY = y;
+            forEach(state.field, (_, coords) -> {
+                chunk.getBlock(coords.x, currentY, coords.y).setType(Material.AIR);
+                return true;
+            });
         }
 
         // Place the Minesweeper Field
@@ -240,35 +229,17 @@ public class GameState {
         state.bar = Bukkit.createBossBar("Mines", BarColor.RED, BarStyle.SEGMENTED_10, BarFlag.CREATE_FOG);
         state.bar.addPlayer(player);
 
-        for (int x = 0; x < 16; x++) {
-            for (int z = 0; z < 16; z++) {
-                state.states[x][z] = FieldState.COVERED;
-            }
-        }
+        forEach(state.states, (_, coords) -> {
+            state.states[coords.x][coords.y] = FieldState.COVERED;
+            return true;
+        });
 
-        for (Player p : block.getLocation().getNearbyPlayers(48)) {
-            p.teleport(block.getLocation().toCenterLocation().add(0, 4, 0));
-            p.setFlying(true);
-
-            // TODO: Construct Block Data that actually makes sense...
-            // https://www.youtube.com/watch?v=K39U55l4-O0
-            // https://minecraft.wiki/w/Pack_format
-            // https://minecraft.wiki/w/Tutorial:Models#Item_predicates
-            // TODO: Look into connecting textures?
-            // BlockData ghostBlockData = Material.LAVA.createBlockData();
-            // p.sendBlockChange(
-            //         block.getRelative(0, 5, 0).getLocation(),
-            //         ghostBlockData
-            // );
-            // Item Model Data: `/give @p red_banner[custom_model_data={strings:['flag']}]`
-        }
-
-
+        player.teleport(block.getLocation().toCenterLocation().add(0, 4, 0));
         return state;
     }
 
     private static void naiveGeneration(GameState state) {
-        int minesPlaced = 0;
+        AtomicInteger minesPlaced = new AtomicInteger();
         double chance = state.mines / (16. * 16);
 
         Block block = state.locator;
@@ -277,37 +248,29 @@ public class GameState {
         int blockChunkZ = ((block.getZ() % 16) + 16) % 16;
         int yLevel = block.getY();
 
-        outerLoop:
-        while (minesPlaced < state.mines) {
-            for (int x = 0; x < 16; x++) {
-                for (int z = 0; z < 16; z++) {
-                    if (state.field[x][z] == GameField.MINE || (blockChunkX == x && blockChunkZ == z)) {
-                        continue;
-                    }
-                    if (Math.random() < chance) {
-                        state.field[x][z] = GameField.MINE;
-                        minesPlaced++;
-                    }
-
-                    if (minesPlaced == state.mines) break outerLoop;
+        while (minesPlaced.get() < state.mines) {
+            forEach(state.field, (f, coords) -> {
+                if (f == GameField.MINE || (blockChunkX == coords.x && blockChunkZ == coords.y)) {
+                    return true;
                 }
-            }
-        }
-
-        for (int x = 0; x < 16; x++) {
-            for (int z = 0; z < 16; z++) {
-                if (state.field[x][z] != GameField.MINE) {
-                    int minesInVicinity = getMinesInVicinity(state.field, x, z);
-                    state.field[x][z] = GameField.values()[minesInVicinity];
+                if (Math.random() < chance) {
+                    state.field[coords.x][coords.y] = GameField.MINE;
+                    minesPlaced.getAndIncrement();
                 }
 
-                // Material block = field[x][z].block;
-                // NOTE: setType(block)
-                chunk.getBlock(x, yLevel, z).setType(GameField.NONE.block);
-                // NOTE: HEAVY_WEIGHTED_PRESSURE_PLATE / AIR
-                chunk.getBlock(x, yLevel + 1, z).setType(GameField.UNKNOWN.block);
-            }
+                return minesPlaced.get() != state.mines;
+            });
         }
+
+        forEach(state.field, (f, coords) -> {
+            if (f != GameField.MINE) {
+                int minesInVicinity = getMinesInVicinity(state.field, coords.x, coords.y);
+                state.field[coords.x][coords.y] = GameField.values()[minesInVicinity];
+            }
+            chunk.getBlock(coords.x, yLevel, coords.y).setType(GameField.NONE.block);
+            chunk.getBlock(coords.x, yLevel + 1, coords.y).setType(GameField.UNKNOWN.block);
+            return true;
+        });
     }
 
     private static int getMinesInVicinity(GameField[][] field, int x, int z) {
@@ -320,15 +283,26 @@ public class GameState {
         return minesInVicinity.get();
     }
 
-    private static void forEachSurrounding(GameField[][] field, int x, int z, BiConsumer<GameField, Vector2i> mapper) {
+    private static void forEachSurrounding(GameField[][] field, int x, int z, BiConsumer<GameField, Vector2i> action) {
         int minX = Math.max(0, x - 1);
         int maxX = Math.min(x + 1, 16 - 1);
         int minZ = Math.max(0, z - 1);
         int maxZ = Math.min(z + 1, 16 - 1);
         for (int ix = minX; ix <= maxX; ix++) {
             for (int iz = minZ; iz <= maxZ; iz++) {
-                mapper.accept(field[ix][iz], new Vector2i(ix, iz));
+                action.accept(field[ix][iz], new Vector2i(ix, iz));
             }
+        }
+    }
+
+    private static <T> void forEach(T[][] field, BiFunction<T, Vector2i, Boolean> action) {
+        boolean resume = true;
+        for (int x = 0; x < 16; x++) {
+            for (int z = 0; z < 16; z++) {
+                resume = action.apply(field[x][z], new Vector2i(x, z));
+                if (!resume) break;
+            }
+            if (!resume) break;
         }
     }
 }

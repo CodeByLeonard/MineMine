@@ -13,9 +13,6 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
 import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.inventory.InventoryClickEvent;
-import org.bukkit.event.inventory.InventoryDragEvent;
-import org.bukkit.event.inventory.InventoryEvent;
-import org.bukkit.event.inventory.InventoryMoveItemEvent;
 import org.bukkit.event.player.PlayerDropItemEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
@@ -90,19 +87,6 @@ public class GameListener implements Listener {
         }
     }
 
-    private static @NonNull ItemStack createFlag() {
-        ItemStack flag = ItemStack.of(Material.RED_BANNER);
-        ItemMeta itemMeta = flag.getItemMeta();
-        //noinspection UnstableApiUsage
-        CustomModelDataComponent cmd = itemMeta.getCustomModelDataComponent();
-        //noinspection UnstableApiUsage
-        cmd.setStrings(List.of("flag"));
-        //noinspection UnstableApiUsage
-        itemMeta.setCustomModelDataComponent(cmd);
-        flag.setItemMeta(itemMeta);
-        return flag.asOne();
-    }
-
     @EventHandler
     public void checkMines(PlayerInteractEvent event) {
         if (event.getAction() == Action.PHYSICAL &&
@@ -128,10 +112,11 @@ public class GameListener implements Listener {
     }
 
     @EventHandler
-    public void toggleMine(PlayerDropItemEvent event) {
+    public void toggleFlag(PlayerDropItemEvent event) {
         if (event.getItemDrop().getItemStack().getType() != GameField.FLAG.block) return;
         Player player = event.getPlayer();
-        for (GameState game : games) {
+        for (int i = 0; i < games.size(); i++) {
+            GameState game = games.get(i);
             if (game.locator.getChunk().getChunkKey() == player.getChunk().getChunkKey()) {
                 RayTraceResult result = player.rayTraceBlocks(16);
                 if (result == null) continue;
@@ -140,7 +125,7 @@ public class GameListener implements Listener {
                 if (block != null && flagBlocks.contains(block.getType())) {
                     defer(() -> {
                         if (game.toggleFlag(block.getX(), block.getZ())) {
-
+                            games.remove(game);
                         } else {
                             player.getInventory().addItem(createFlag());
                             event.getItemDrop().remove();
@@ -187,6 +172,19 @@ public class GameListener implements Listener {
                 20
             ));
         }
+    }
+
+    private static @NonNull ItemStack createFlag() {
+        ItemStack flag = ItemStack.of(Material.RED_BANNER);
+        ItemMeta itemMeta = flag.getItemMeta();
+        //noinspection UnstableApiUsage
+        CustomModelDataComponent cmd = itemMeta.getCustomModelDataComponent();
+        //noinspection UnstableApiUsage
+        cmd.setStrings(List.of("flag"));
+        //noinspection UnstableApiUsage
+        itemMeta.setCustomModelDataComponent(cmd);
+        flag.setItemMeta(itemMeta);
+        return flag.asOne();
     }
 
     public static GameListener getInstance() {
