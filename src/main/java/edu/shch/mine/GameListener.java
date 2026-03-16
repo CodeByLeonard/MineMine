@@ -1,5 +1,7 @@
 package edu.shch.mine;
 
+import net.kyori.adventure.resource.ResourcePackInfo;
+import net.kyori.adventure.resource.ResourcePackRequest;
 import org.bukkit.*;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
@@ -24,12 +26,17 @@ import org.bukkit.util.RayTraceResult;
 import org.jetbrains.annotations.Nullable;
 import org.jspecify.annotations.NonNull;
 
+import java.net.URI;
 import java.util.*;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 import static edu.shch.mine.Utils.defer;
 
 public class GameListener implements Listener {
     private static GameListener instance;
+    private final Random random = new Random(42L);
 
     private final ArrayList<GameState> games = new ArrayList<>();
     private final Map<Player, Boolean> xray = new HashMap<>();
@@ -219,6 +226,22 @@ public class GameListener implements Listener {
     @EventHandler
     public void checkGlasses(PlayerJoinEvent event) {
         Player player = event.getPlayer();
+
+        try {
+            int port = random.nextInt(1 << 10, 1 << 16);
+            Utils.serveResources(port);
+            player.sendResourcePacks(ResourcePackRequest.resourcePackRequest()
+                    .packs(ResourcePackInfo.resourcePackInfo()
+                        .id(Utils.TEXTURE_PACK_ID)
+                        .uri(URI.create("http://127.0.0.1:%d".formatted(port)))
+                        .computeHashAndBuild()
+                        .get(5, TimeUnit.SECONDS)
+                    ).required(true).asResourcePackRequest());
+        } catch (InterruptedException | ExecutionException | TimeoutException e) {
+            MineSweeperPlugin.instance.getLogger()
+                .severe("Couldn't send Texture Pack to %s".formatted(player.getName()));
+        }
+
         defer(() -> checkHelmet(player));
     }
 
