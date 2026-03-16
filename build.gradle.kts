@@ -20,6 +20,8 @@ dependencies {
     testImplementation("org.junit.jupiter:junit-jupiter")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 
+    implementation(project(":jdk-patches"))
+
     constraints {
         implementation("org.apache.commons:commons-lang3:3.20.0") {
             because("CVE-2025-48924: Upgrade Apache Commons Lang from 3.12.0 -> 3.20.0")
@@ -34,5 +36,6 @@ tasks {
 
     runServer {
         minecraftVersion("1.21.11")
+        jvmArgs("-javaagent:${project(":jdk-patches").tasks.jar.get().archiveFile.get().asFile.absolutePath}")
     }
 }

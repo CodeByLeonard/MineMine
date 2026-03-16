@@ -1,6 +1,7 @@
-name: MineSweeoer
+name: MineSweeper
 version: 0.1.0
 main: edu.shch.mine.MineSweeperPlugin
+bootstrapper: edu.shch.mine.MineSweeperPluginBootstrap
 load: STARTUP
 description: Minesweeper in Minecraft
 author: Me
