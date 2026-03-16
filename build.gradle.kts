@@ -42,6 +42,16 @@ dependencies {
     }
 }
 
+configurations.all {
+    resolutionStrategy {
+        dependencySubstitution {
+            substitute(module("commons-lang:commons-lang"))
+                .using(module("org.apache.commons:commons-lang3:3.20.0"))
+                .because("CVE-2025-48924: Migrate from Commons Lang 2 to Commons Lang 3")
+        }
+    }
+}
+
 tasks {
     test {
         useJUnitPlatform()
