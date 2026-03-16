@@ -31,6 +31,10 @@ dependencies {
         implementation("org.apache.logging.log4j:log4j-core:2.25.3") {
             because("CVE-2025-68161: Upgrade Log4J-Core from 2.25.2 -> 2.25.3")
         }
+
+        implementation("io.netty:netty-codec-http:4.2.10.Final") {
+            because("CVE-2025-67735: Upgrade Netty Codec HTTP from 4.2.7.Final -> 4.2.10.Final")
+        }
     }
 }
 
