@@ -25,18 +25,18 @@ import java.util.function.Consumer;
 import static edu.shch.mine.util.Utils.defer;
 
 public class GameState {
-    final Player player;
+    private final Player player;
     public final Block locator;
-    final int mines = 32;
-    BossBar bar;
-    int flagsPlaced = 0;
+    private final int mines = 32;
+    private BossBar bar;
+    private int flagsPlaced = 0;
 
     private boolean finished = false;
 
-    final GameField[][] field = new GameField[16][16];
-    final FieldState[][] states = new FieldState[16][16];
-    final List<ItemDisplay> entities = new ArrayList<>();
-    final Consumer<GameState> finishCallback;
+    private final GameField[][] field = new GameField[16][16];
+    private final FieldState[][] states = new FieldState[16][16];
+    private final List<ItemDisplay> entities = new ArrayList<>();
+    private final Consumer<GameState> finishCallback;
 
     private GameState(Player player, Block locator, Consumer<GameState> finishCallback) {
         this.player = player;
@@ -168,7 +168,7 @@ public class GameState {
         return finished;
     }
 
-    public void finish(boolean win) {
+    private void finish(boolean win) {
         MineSweeperPlugin.instance.getLogger().info("Finished Game: %s".formatted(win));
         ChunkUtils.restoreChunk(locator.getChunk());
         player.teleport(locator.getLocation().toCenterLocation());
