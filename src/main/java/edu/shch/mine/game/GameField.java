@@ -7,6 +7,7 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.inventory.meta.components.CustomModelDataComponent;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
@@ -24,7 +25,7 @@ public enum GameField {
     UNKNOWN(Material.HEAVY_WEIGHTED_PRESSURE_PLATE),
     FLAG(Material.RED_BANNER);
 
-    final Material block;
+    public final Material block;
     GameField(Material block) {
         this.block = block;
     }
@@ -44,7 +45,7 @@ public enum GameField {
         return stack;
     }
 
-    ItemDisplay spawnItemDisplay(Block block) {
+    public ItemDisplay spawnItemDisplay(Block block) {
         return block.getWorld().spawn(
             block.getLocation().toCenterLocation(),
             ItemDisplay.class,
@@ -56,7 +57,7 @@ public enum GameField {
         return this.ordinal() <= EIGHT.ordinal();
     }
 
-    static Optional<GameField> fromMaterial(Material material) {
+    public static Optional<GameField> fromMaterial(Material material) {
         for (GameField field : GameField.values()) {
             if (field.block == material) {
                 return Optional.of(field);
@@ -64,4 +65,10 @@ public enum GameField {
         }
         return Optional.empty();
     }
+
+    public static final List<Material> NON_MINE_MATERIALS = Arrays.stream(GameField.values())
+        .skip(1)
+        .takeWhile(f -> f.ordinal() <= 8)
+        .map(f -> f.block)
+        .toList();
 }

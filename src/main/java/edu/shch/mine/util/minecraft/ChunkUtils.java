@@ -3,7 +3,9 @@ package edu.shch.mine.util.minecraft;
 import edu.shch.mine.util.Pair;
 import org.bukkit.Chunk;
 import org.bukkit.Material;
+import org.bukkit.block.Block;
 import org.bukkit.block.data.BlockData;
+import org.bukkit.entity.Player;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -64,6 +66,14 @@ public class ChunkUtils {
                 }
             }
         }
+    }
+
+    public boolean sameChunk(Player player, Block block) {
+        return player.getChunk().getChunkKey() == block.getChunk().getChunkKey();
+    }
+
+    public boolean sameChunk(Block a, Block b) {
+        return a.getChunk().getChunkKey() == b.getChunk().getChunkKey();
     }
 
     public static ChunkUtils getInstance() {

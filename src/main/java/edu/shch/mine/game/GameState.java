@@ -26,7 +26,7 @@ import static edu.shch.mine.util.Utils.defer;
 
 public class GameState {
     final Player player;
-    final Block locator;
+    public final Block locator;
     final int mines = 32;
     BossBar bar;
     int flagsPlaced = 0;

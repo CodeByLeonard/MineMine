@@ -1,6 +1,9 @@
 package edu.shch.mine.util;
 
 import edu.shch.mine.MineSweeperPlugin;
+import net.kyori.adventure.resource.ResourcePackInfo;
+import net.kyori.adventure.resource.ResourcePackRequest;
+import org.bukkit.entity.Player;
 
 import java.io.*;
 import java.net.*;
@@ -11,6 +14,9 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.stream.Stream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
@@ -26,7 +32,7 @@ public class Utils {
         );
     }
 
-    public static void serveResources(int port) {
+    public static void serveResources(int port, Player player) throws ExecutionException, InterruptedException, TimeoutException {
         new Thread(() -> {
             try (ServerSocket ss = new ServerSocket(port)) {
                 // Pre-Flight Request for Hash + Client Request
@@ -47,6 +53,16 @@ public class Utils {
                 System.err.printf("Couldn't open Server Socket on Port %d%n%s%n", port, e.getMessage());
             }
         }, "ResourcePack Server").start();
+
+        if (player != null) {
+            player.sendResourcePacks(ResourcePackRequest.resourcePackRequest()
+                .packs(ResourcePackInfo.resourcePackInfo()
+                    .id(Utils.TEXTURE_PACK_ID)
+                    .uri(URI.create("http://127.0.0.1:%d".formatted(port)))
+                    .computeHashAndBuild()
+                    .get(5, TimeUnit.SECONDS)
+                ).required(true).asResourcePackRequest());
+        }
     }
 
     static void createResourceZipStream(OutputStream stream) {
