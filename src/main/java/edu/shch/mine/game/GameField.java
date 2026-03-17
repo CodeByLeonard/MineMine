@@ -52,6 +52,10 @@ public enum GameField {
         );
     }
 
+    boolean isNonMine() {
+        return this.ordinal() <= EIGHT.ordinal();
+    }
+
     static Optional<GameField> fromMaterial(Material material) {
         for (GameField field : GameField.values()) {
             if (field.block == material) {

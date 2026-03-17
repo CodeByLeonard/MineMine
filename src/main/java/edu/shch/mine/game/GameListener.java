@@ -75,7 +75,8 @@ public class GameListener implements Listener {
 
             Player player = event.getPlayer();
             if (alphaMaterial == alphaTestMaterial && betaMaterial == betaTestMaterial) {
-                games.add(GameState.from(player, event.getBlock().getRelative(0, -index, 0)));
+                games.add(GameState.from(player, event.getBlock().getRelative(0, -index, 0),
+                    (state) -> defer(() -> games.remove(state))));
                 Server server = player.getServer();
                 defer(() -> {
                     List<Material> trash = List.of(
@@ -122,15 +123,13 @@ public class GameListener implements Listener {
             for (GameState game : games) {
                 if (game.locator.getChunk().getChunkKey() == below.getChunk().getChunkKey()) {
                     if (below.getType() == GameField.NONE.block) {
-                        if (game.toggleFlag(event.getBlock().getX(), event.getBlock().getZ())) {
-                            defer(() -> games.remove(game));
-                        } else {
+                        game.toggleFlag(event.getBlock().getX(), event.getBlock().getZ());
+                        if (game.isNotFinished()) {
                             event.setCancelled(true);
                         }
                     } else if (below.getType() == GameField.UNKNOWN.block) {
-                        if (game.toggleFlag(below.getX(), below.getZ())) {
-                            defer(() -> games.remove(game));
-                        } else {
+                        game.toggleFlag(below.getX(), below.getZ());
+                        if (game.isNotFinished()) {
                             event.setCancelled(true);
                         }
                     }
@@ -158,16 +157,10 @@ public class GameListener implements Listener {
         ) {
             MineSweeperPlugin.instance.getLogger().info("Uncovering Field...");
             Block block = event.getClickedBlock();
-            for (int i = 0; i < games.size(); i++) {
-                GameState game = games.get(i);
+            for (GameState game : games) {
                 if (game.locator.getChunk().getChunkKey() == block.getChunk().getChunkKey()) {
                     Player player = event.getPlayer();
-                    int gameIndex = i;
-                    defer(() -> {
-                        if (game.uncover(player, block.getX(), block.getZ())) {
-                            games.remove(gameIndex);
-                        }
-                    });
+                    defer(() -> game.uncover(player, block.getX(), block.getZ()));
                     break;
                 }
             }
@@ -178,8 +171,7 @@ public class GameListener implements Listener {
     public void toggleFlag(PlayerDropItemEvent event) {
         if (event.getItemDrop().getItemStack().getType() != GameField.FLAG.block) return;
         Player player = event.getPlayer();
-        for (int i = 0; i < games.size(); i++) {
-            GameState game = games.get(i);
+        for (GameState game : games) {
             if (game.locator.getChunk().getChunkKey() == player.getChunk().getChunkKey()) {
                 RayTraceResult result = player.rayTraceBlocks(16);
                 if (result != null) {
@@ -187,9 +179,8 @@ public class GameListener implements Listener {
                     if (block != null) {
                         if (block.getType() == GameField.UNKNOWN.block) {
                             defer(() -> {
-                                if (game.toggleFlag(block.getX(), block.getZ())) {
-                                    games.remove(game);
-                                } else {
+                                game.toggleFlag(block.getX(), block.getZ());
+                                if (game.isNotFinished()) {
                                     player.getInventory().addItem(createFlag());
                                     event.getItemDrop().remove();
                                 }
@@ -202,9 +193,8 @@ public class GameListener implements Listener {
                                 ItemDisplay first = displays.stream().findFirst().get();
                                 if (first.getItemStack().getType() == GameField.FLAG.block) {
                                     defer(() -> {
-                                        if (game.toggleFlag(block.getX(), block.getZ())) {
-                                            games.remove(game);
-                                        } else {
+                                        game.toggleFlag(block.getX(), block.getZ());
+                                        if (game.isNotFinished()) {
                                             player.getInventory().addItem(createFlag());
                                             event.getItemDrop().remove();
                                         }

@@ -2,6 +2,7 @@ package edu.shch.mine.util.minecraft;
 
 import edu.shch.mine.util.Pair;
 import org.bukkit.Chunk;
+import org.bukkit.Material;
 import org.bukkit.block.data.BlockData;
 
 import java.util.ArrayList;
@@ -52,6 +53,17 @@ public class ChunkUtils {
             }
         }
         healCache.remove(key);
+    }
+
+    public void fillAir(Chunk chunk, int from) {
+        int maxHeight = chunk.getWorld().getMaxHeight();
+        for (int y = maxHeight - 1; y >= from; y--) {
+            for (int x = 0; x < 16; x++) {
+                for (int z = 0; z < 16; z++) {
+                    chunk.getBlock(x, y, z).setType(Material.AIR);
+                }
+            }
+        }
     }
 
     public static ChunkUtils getInstance() {
