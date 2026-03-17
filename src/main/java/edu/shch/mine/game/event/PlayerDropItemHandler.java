@@ -29,10 +29,9 @@ public class PlayerDropItemHandler implements Listener {
         MineSweeperPlugin plugin = MineSweeperPlugin.instance;
         ArrayList<GameState> games = plugin.games;
         Player player = event.getPlayer();
-        ChunkUtils utils = ChunkUtils.getInstance();
 
         for (GameState game : games) {
-            if (!utils.sameChunk(player, game.locator)) continue;
+            if (!ChunkUtils.sameChunk(player, game.locator)) continue;
 
             RayTraceResult result = player.rayTraceBlocks(16);
             if (result == null) continue;

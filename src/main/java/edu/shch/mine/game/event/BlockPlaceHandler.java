@@ -64,10 +64,9 @@ public class BlockPlaceHandler implements Listener {
     }
 
     private static void placeFlagBlock(Block block, Runnable cancel) {
-        ChunkUtils utils = ChunkUtils.getInstance();
         Block below = block.getRelative(BlockFace.DOWN);
         for (GameState game : MineSweeperPlugin.instance.games) {
-            if (utils.sameChunk(game.locator, below)) {
+            if (ChunkUtils.sameChunk(game.locator, below)) {
                 if (below.getType() == GameField.NONE.block) {
                     game.toggleFlag(block.getX(), block.getZ());
                     if (game.isNotFinished()) {

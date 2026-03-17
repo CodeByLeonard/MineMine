@@ -170,7 +170,7 @@ public class GameState {
 
     public void finish(boolean win) {
         MineSweeperPlugin.instance.getLogger().info("Finished Game: %s".formatted(win));
-        ChunkUtils.getInstance().restoreChunk(locator.getChunk());
+        ChunkUtils.restoreChunk(locator.getChunk());
         player.teleport(locator.getLocation().toCenterLocation());
         defer(() -> {
             bar.removeAll();
@@ -308,9 +308,8 @@ public class GameState {
             chunk.getBlock(blockChunkX, height + y, blockChunkZ).setType(Material.AIR);
         }
 
-        ChunkUtils chunkUtils = ChunkUtils.getInstance();
-        chunkUtils.saveChunk(chunk, height);
-        chunkUtils.fillAir(chunk, height + 2);
+        ChunkUtils.saveChunk(chunk, height);
+        ChunkUtils.fillAir(chunk, height + 2);
 
         state.naiveGeneration();
         state.createProgressBarForPlayer(player);

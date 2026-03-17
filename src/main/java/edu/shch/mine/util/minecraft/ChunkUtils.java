@@ -11,12 +11,9 @@ import java.util.ArrayList;
 import java.util.HashMap;
 
 public class ChunkUtils {
-    private final HashMap<Long, Pair<Integer, ArrayList<BlockData>>> healCache = new HashMap<>();
+    private static final HashMap<Long, Pair<Integer, ArrayList<BlockData>>> healCache = new HashMap<>();
 
-    private static ChunkUtils instance;
-    private ChunkUtils() {}
-
-    public void saveChunk(Chunk chunk, int height) {
+    public static void saveChunk(Chunk chunk, int height) {
         ArrayList<BlockData> data = new ArrayList<>();
 
         // Iterate Top to Bottom in Reverse: Bottom-Up
@@ -36,7 +33,7 @@ public class ChunkUtils {
         healCache.put(chunk.getChunkKey(), Pair.of(height, data));
     }
 
-    public void restoreChunk(Chunk chunk) {
+    public static void restoreChunk(Chunk chunk) {
         long key = chunk.getChunkKey();
         if (!healCache.containsKey(key)) return;
         Pair<Integer, ArrayList<BlockData>> store = healCache.get(key);
@@ -57,7 +54,7 @@ public class ChunkUtils {
         healCache.remove(key);
     }
 
-    public void fillAir(Chunk chunk, int from) {
+    public static void fillAir(Chunk chunk, int from) {
         int maxHeight = chunk.getWorld().getMaxHeight();
         for (int y = maxHeight - 1; y >= from; y--) {
             for (int x = 0; x < 16; x++) {
@@ -68,18 +65,11 @@ public class ChunkUtils {
         }
     }
 
-    public boolean sameChunk(Player player, Block block) {
+    public static boolean sameChunk(Player player, Block block) {
         return player.getChunk().getChunkKey() == block.getChunk().getChunkKey();
     }
 
-    public boolean sameChunk(Block a, Block b) {
+    public static boolean sameChunk(Block a, Block b) {
         return a.getChunk().getChunkKey() == b.getChunk().getChunkKey();
-    }
-
-    public static ChunkUtils getInstance() {
-        if (instance == null) {
-            instance = new ChunkUtils();
-        }
-        return instance;
     }
 }
