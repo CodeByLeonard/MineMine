@@ -5,6 +5,9 @@ import edu.shch.mine.game.GameField;
 import edu.shch.mine.game.GameState;
 import edu.shch.mine.game.logic.FlagLogic;
 import edu.shch.mine.util.minecraft.ChunkUtils;
+import lombok.AccessLevel;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -14,9 +17,10 @@ import org.bukkit.util.RayTraceResult;
 
 import java.util.ArrayList;
 
+@NoArgsConstructor(access = AccessLevel.PRIVATE)
 public class PlayerDropItemHandler implements Listener {
-    private static PlayerDropItemHandler instance;
-    private PlayerDropItemHandler() {}
+    @Getter(lazy = true)
+    private static final PlayerDropItemHandler instance = new PlayerDropItemHandler();
 
     @EventHandler
     public void toggleFlag(PlayerDropItemEvent event) {
@@ -26,7 +30,6 @@ public class PlayerDropItemHandler implements Listener {
         ArrayList<GameState> games = plugin.games;
         Player player = event.getPlayer();
         ChunkUtils utils = ChunkUtils.getInstance();
-        FlagLogic logic = FlagLogic.getInstance();
 
         for (GameState game : games) {
             if (!utils.sameChunk(player, game.locator)) continue;
@@ -38,17 +41,10 @@ public class PlayerDropItemHandler implements Listener {
             if (block == null) continue;
 
             if (block.getType() == GameField.UNKNOWN.block) {
-                logic.toggleFlag(event.getItemDrop(), game, block, player.getInventory());
+                FlagLogic.toggleFlag(event.getItemDrop(), game, block, player.getInventory());
             } else if (block.getType() == GameField.NONE.block) {
-                logic.unflag(event.getItemDrop(), game, block, player.getInventory());
+                FlagLogic.unflag(event.getItemDrop(), game, block, player.getInventory());
             }
         }
-    }
-
-    public static PlayerDropItemHandler getInstance() {
-        if (instance == null) {
-            instance = new PlayerDropItemHandler();
-        }
-        return instance;
     }
 }

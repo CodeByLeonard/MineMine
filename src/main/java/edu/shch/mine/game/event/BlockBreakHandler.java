@@ -1,5 +1,8 @@
 package edu.shch.mine.game.event;
 
+import lombok.AccessLevel;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 import org.bukkit.Material;
 import org.bukkit.entity.ItemDisplay;
 import org.bukkit.event.EventHandler;
@@ -8,9 +11,10 @@ import org.bukkit.event.block.BlockBreakEvent;
 
 import java.util.Collection;
 
+@NoArgsConstructor(access = AccessLevel.PRIVATE)
 public class BlockBreakHandler implements Listener {
-    private static BlockBreakHandler instance;
-    private BlockBreakHandler() {}
+    @Getter(lazy = true)
+    private static final BlockBreakHandler instance = new BlockBreakHandler();
 
     @EventHandler
     public void destroyEntityOnBreak(BlockBreakEvent event) {
@@ -21,12 +25,5 @@ public class BlockBreakHandler implements Listener {
                 display.remove();
             }
         }
-    }
-
-    public static BlockBreakHandler getInstance() {
-        if (instance == null) {
-            instance = new BlockBreakHandler();
-        }
-        return instance;
     }
 }

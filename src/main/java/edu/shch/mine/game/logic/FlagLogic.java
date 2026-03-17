@@ -20,10 +20,8 @@ import java.util.List;
 import static edu.shch.mine.util.Utils.defer;
 
 public class FlagLogic {
-    private static FlagLogic instance;
-
     @SuppressWarnings("UnstableApiUsage")
-    private @NonNull ItemStack createFlag() {
+    private static @NonNull ItemStack createFlag() {
         ItemStack flag = ItemStack.of(Material.RED_BANNER);
         ItemMeta itemMeta = flag.getItemMeta();
         CustomModelDataComponent cmd = itemMeta.getCustomModelDataComponent();
@@ -33,7 +31,7 @@ public class FlagLogic {
         return flag.asOne();
     }
 
-    public void unflag(Item item, GameState game, Block block, PlayerInventory inventory) {
+    public static void unflag(Item item, GameState game, Block block, PlayerInventory inventory) {
         Collection<ItemDisplay> displays = block.getRelative(BlockFace.UP)
             .getLocation().toCenterLocation()
             .getNearbyEntitiesByType(ItemDisplay.class, .1);
@@ -51,7 +49,7 @@ public class FlagLogic {
         }
     }
 
-    public void toggleFlag(Item item, GameState game, Block block, PlayerInventory inventory) {
+    public static void toggleFlag(Item item, GameState game, Block block, PlayerInventory inventory) {
         defer(() -> {
             game.toggleFlag(block.getX(), block.getZ());
             if (game.isNotFinished()) {
@@ -61,17 +59,10 @@ public class FlagLogic {
         });
     }
 
-    public void giveFlag(PlayerInventory inventory) {
+    public static void giveFlag(PlayerInventory inventory) {
         ItemStack flag = createFlag();
         if (!inventory.contains(flag)) {
             inventory.addItem(flag);
         }
-    }
-
-    public static FlagLogic getInstance() {
-        if (instance == null) {
-            instance = new FlagLogic();
-        }
-        return instance;
     }
 }

@@ -14,19 +14,18 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class XRayHelmetLogic {
-    private final Map<Player, Boolean> xray = new HashMap<>();
-    private final Map<Player, BukkitTask> playerTasks = new HashMap<>();
-    private static XRayHelmetLogic instance;
+    private static final Map<Player, Boolean> xray = new HashMap<>();
+    private static final Map<Player, BukkitTask> playerTasks = new HashMap<>();
 
-    public void checkHelmet(Player player) {
+    public static void checkHelmet(Player player) {
         @Nullable ItemStack helmet = player.getInventory().getHelmet();
         boolean enableHints = helmet != null && helmet.getType() == Material.COPPER_HELMET;
         xray.put(player, enableHints);
 
-        if (!this.playerTasks.containsKey(player)) {
+        if (!playerTasks.containsKey(player)) {
             MineSweeperPlugin plugin = MineSweeperPlugin.instance;
 
-            this.playerTasks.put(player, Bukkit.getScheduler().runTaskTimer(
+            playerTasks.put(player, Bukkit.getScheduler().runTaskTimer(
                 plugin,
                 () -> {
                     if (xray.get(player)) {
@@ -42,12 +41,5 @@ public class XRayHelmetLogic {
                 20
             ));
         }
-    }
-
-    public static XRayHelmetLogic getInstance() {
-        if (instance == null) {
-            instance = new XRayHelmetLogic();
-        }
-        return instance;
     }
 }

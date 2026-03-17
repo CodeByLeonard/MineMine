@@ -2,6 +2,7 @@ plugins {
     id("java")
     id("io.papermc.paperweight.userdev") version "2.0.0-beta.19"
     id("xyz.jpenilla.run-paper") version "3.0.2"
+    id("io.freefair.lombok") version "9.2.0"
 }
 
 group = "edu.shch.mine"
@@ -52,13 +53,13 @@ configurations.all {
     }
 }
 
+paperweight {
+    reobfArtifactConfiguration = io.papermc.paperweight.userdev.ReobfArtifactConfiguration.MOJANG_PRODUCTION
+}
+
 tasks {
     test {
         useJUnitPlatform()
-    }
-
-    paperweight {
-        reobfArtifactConfiguration = io.papermc.paperweight.userdev.ReobfArtifactConfiguration.MOJANG_PRODUCTION
     }
 
     runServer {

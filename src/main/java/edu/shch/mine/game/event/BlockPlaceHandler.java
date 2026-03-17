@@ -5,6 +5,9 @@ import edu.shch.mine.game.GameField;
 import edu.shch.mine.game.GameState;
 import edu.shch.mine.game.logic.FlagLogic;
 import edu.shch.mine.util.minecraft.ChunkUtils;
+import lombok.AccessLevel;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 import org.bukkit.Material;
 import org.bukkit.Server;
 import org.bukkit.block.Block;
@@ -23,7 +26,11 @@ import java.util.List;
 
 import static edu.shch.mine.util.Utils.defer;
 
+@NoArgsConstructor(access = AccessLevel.PRIVATE)
 public class BlockPlaceHandler implements Listener {
+    @Getter(lazy = true)
+    private static final BlockPlaceHandler instance = new BlockPlaceHandler();
+
     private static final List<Material> TRASH = List.of(
         // Seeds
         Material.WHEAT_SEEDS,
@@ -38,9 +45,6 @@ public class BlockPlaceHandler implements Listener {
         Material.SMOOTH_STONE,
         Material.HEAVY_WEIGHTED_PRESSURE_PLATE
     );
-
-    private static BlockPlaceHandler instance;
-    private BlockPlaceHandler() {}
 
     @EventHandler
     public void initiateGame(BlockPlaceEvent event) {
@@ -124,14 +128,7 @@ public class BlockPlaceHandler implements Listener {
                     item.remove();
                 }
             }
-            FlagLogic.getInstance().giveFlag(player.getInventory());
+            FlagLogic.giveFlag(player.getInventory());
         });
-    }
-
-    public static BlockPlaceHandler getInstance() {
-        if (instance == null) {
-            instance = new BlockPlaceHandler();
-        }
-        return instance;
     }
 }

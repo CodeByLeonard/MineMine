@@ -3,6 +3,9 @@ package edu.shch.mine.game.event;
 import edu.shch.mine.MineSweeperPlugin;
 import edu.shch.mine.game.GameField;
 import edu.shch.mine.game.GameState;
+import lombok.AccessLevel;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -12,9 +15,10 @@ import org.bukkit.event.player.PlayerInteractEvent;
 
 import static edu.shch.mine.util.Utils.defer;
 
+@NoArgsConstructor(access = AccessLevel.PRIVATE)
 public class PlayerInteractHandler implements Listener {
-    private static PlayerInteractHandler instance;
-    private PlayerInteractHandler() {}
+    @Getter(lazy = true)
+    private static final PlayerInteractHandler instance = new PlayerInteractHandler();
 
     @EventHandler
     public void checkMines(PlayerInteractEvent event) {
@@ -33,12 +37,5 @@ public class PlayerInteractHandler implements Listener {
                 }
             }
         }
-    }
-
-    public static PlayerInteractHandler getInstance() {
-        if (instance == null) {
-            instance = new PlayerInteractHandler();
-        }
-        return instance;
     }
 }
