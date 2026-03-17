@@ -2,10 +2,10 @@ package edu.shch.mine.game;
 
 import edu.shch.mine.MineSweeperPlugin;
 import edu.shch.mine.util.Vec2iComparator;
+import edu.shch.mine.util.minecraft.ChunkUtils;
 import org.bukkit.*;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
-import org.bukkit.block.data.BlockData;
 import org.bukkit.boss.BarColor;
 import org.bukkit.boss.BarFlag;
 import org.bukkit.boss.BarStyle;
@@ -32,7 +32,6 @@ public class GameState {
     BossBar bar;
     int flagsPlaced = 0;
 
-    final ArrayList<BlockData> healCache = new ArrayList<>();
     final GameField[][] field = new GameField[16][16];
     final FieldState[][] states = new FieldState[16][16];
     final List<ItemDisplay> entities = new ArrayList<>();
@@ -161,21 +160,7 @@ public class GameState {
 
     public void finish(boolean win) {
         MineSweeperPlugin.instance.getLogger().info("Finished Game: %s".formatted(win));
-        Chunk chunk = locator.getChunk();
-        int height = locator.getY();
-        int maxHeight = locator.getWorld().getMaxHeight();
-        forEach(field, (_, coords) -> {
-            chunk.getBlock(coords.x, height + 1, coords.y).setType(Material.AIR);
-            return true;
-        });
-
-        for (int y = height; y < maxHeight; y++) {
-            for (int x = 15; x >= 0; x--) {
-                for (int z = 15; z >= 0; z--) {
-                    chunk.getBlock(x, y, z).setBlockData(healCache.removeLast());
-                }
-            }
-        }
+        ChunkUtils.getInstance().restoreChunk(locator.getChunk());
 
         player.teleport(locator.getLocation().toCenterLocation());
         defer(() -> {
@@ -237,19 +222,11 @@ public class GameState {
         System.out.println(chunk.getBlock(blockChunkX, height, blockChunkZ));
 
         // Retrieve Block Data for all Blocks in Chunk
-        for (int y = maxHeight - 1; y >= height; y--) {
-            int currentHeight = y;
-            forEach(state.field, (_, coords) -> {
-                BlockData data = chunk.getBlock(coords.x, currentHeight, coords.y).getBlockData();
-                if (coords.x == blockChunkX && coords.y == blockChunkZ && currentHeight <= height + 3) {
-                    chunk.getBlock(coords.x, currentHeight, coords.y).setType(Material.AIR);
-                    data = chunk.getBlock(coords.x, currentHeight, coords.y).getBlockData();
-                }
-                // TODO: (Re)store NBT as well, so that chests can be backed up
-                state.healCache.add(data);
-                return true;
-            });
+        for (int y = 2; y >= 0; y--) {
+            chunk.getBlock(blockChunkX, height + y, blockChunkZ).setType(Material.AIR);
         }
+
+        ChunkUtils.getInstance().saveChunk(chunk, height);
 
         // Void All Blocks (separate loop due to issues with leaves, snow, etc.)
         for (int y = maxHeight - 1; y >= height + 2; y--) {
