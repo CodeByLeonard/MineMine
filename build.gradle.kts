@@ -21,7 +21,7 @@ dependencies {
     testImplementation("org.junit.jupiter:junit-jupiter")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 
-    implementation(project(":jdk-patches"))
+    runtimeOnly(project(":jdk-patches"))
 
     constraints {
         implementation("org.apache.commons:commons-lang3:3.20.0") {

@@ -12,7 +12,7 @@ import java.util.Random;
 
 @SuppressWarnings("unused")
 public class MineSweeperPlugin extends JavaPlugin implements Listener {
-    public Random random = new Random(42L);
+    public final Random random = new Random(42L);
     public final ArrayList<GameState> games = new ArrayList<>();
 
     public static MineSweeperPlugin instance;
