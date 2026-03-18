@@ -1,11 +1,11 @@
 package edu.shch.mine.game.event;
 
 import edu.shch.mine.MineSweeperPlugin;
-import edu.shch.mine.game.GameField;
 import edu.shch.mine.game.GameState;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -24,7 +24,7 @@ public class PlayerInteractHandler implements Listener {
     public void checkMines(PlayerInteractEvent event) {
         if (event.getAction() == Action.PHYSICAL &&
             event.getClickedBlock() != null &&
-            event.getClickedBlock().getType() == GameField.UNKNOWN.block
+            event.getClickedBlock().getType() == Material.HEAVY_WEIGHTED_PRESSURE_PLATE
         ) {
             MineSweeperPlugin plugin = MineSweeperPlugin.instance;
             plugin.getLogger().info("Uncovering Field...");

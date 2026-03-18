@@ -37,7 +37,7 @@ public class BlockPlaceHandler implements Listener {
         // Tree Drops
         Material.SPRUCE_SAPLING,
         // Flowers, Mushrooms
-        Material.POPPY
+        Material.POPPY, Material.PEONY
     );
 
     private static final List<Material> gameStartBlocks = List.of(
@@ -57,7 +57,7 @@ public class BlockPlaceHandler implements Listener {
             if (GameField.NON_MINE_MATERIALS.contains(material)) {
                 //noinspection OptionalGetWithoutIsPresent
                 placeFieldBlock(GameField.fromMaterial(material).get(), event.getItemInHand(), event.getBlock(), cancel);
-            } else if (material == GameField.FLAG.block) {
+            } else if (material == Material.RED_BANNER) {
                 placeFlagBlock(event.getBlock(), cancel);
             }
         }
@@ -67,12 +67,12 @@ public class BlockPlaceHandler implements Listener {
         Block below = block.getRelative(BlockFace.DOWN);
         for (GameState game : MineSweeperPlugin.instance.games) {
             if (ChunkUtils.sameChunk(game.locator, below)) {
-                if (below.getType() == GameField.NONE.block) {
+                if (below.getType() == GameField.NONE.type) {
                     game.toggleFlag(block.getX(), block.getZ());
                     if (game.isNotFinished()) {
                         cancel.run();
                     }
-                } else if (below.getType() == GameField.UNKNOWN.block) {
+                } else if (below.getType() == Material.HEAVY_WEIGHTED_PRESSURE_PLATE) {
                     game.toggleFlag(below.getX(), below.getZ());
                     if (game.isNotFinished()) {
                         cancel.run();
@@ -92,7 +92,7 @@ public class BlockPlaceHandler implements Listener {
                 cancel.run();
                 defer(() -> {
                     block.setType(Material.BARRIER);
-                    field.spawnItemDisplay(block);
+                    field.spawnItemDisplay(block.getLocation());
                 });
             }
         }

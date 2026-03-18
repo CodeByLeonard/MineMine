@@ -1,15 +1,13 @@
 package edu.shch.mine.game;
 
+import org.bukkit.Location;
 import org.bukkit.Material;
-import org.bukkit.block.Block;
 import org.bukkit.entity.ItemDisplay;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.inventory.meta.components.CustomModelDataComponent;
 
-import java.util.Arrays;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 public enum GameField {
     NONE(Material.SMOOTH_STONE),
@@ -21,54 +19,46 @@ public enum GameField {
     SIX(Material.CYAN_CONCRETE),
     SEVEN(Material.GRAY_CONCRETE),
     EIGHT(Material.BLACK_CONCRETE),
-    MINE(Material.REDSTONE_LAMP),
-    UNKNOWN(Material.HEAVY_WEIGHTED_PRESSURE_PLATE),
-    FLAG(Material.RED_BANNER);
+    MINE(Material.REDSTONE_LAMP);
 
-    public final Material block;
-    GameField(Material block) {
-        this.block = block;
+    private static final Map<Material, GameField> MATERIAL_INDEX = Arrays.stream(GameField.values())
+        .collect(HashMap::new, (map, field) -> map.put(field.type, field), HashMap::putAll);
+
+    public final Material type;
+    GameField(Material type) {
+        this.type = type;
     }
 
     @SuppressWarnings("UnstableApiUsage")
     ItemStack getEntityStack() {
-        ItemStack stack = ItemStack.of(this.block);
+        ItemStack stack = ItemStack.of(this.type);
         ItemMeta meta = stack.getItemMeta();
         CustomModelDataComponent cmd = meta.getCustomModelDataComponent();
-        if (this.ordinal() <= 8) {
-            cmd.setStrings(List.of("mine"));
-        } else {
-            cmd.setStrings(List.of("flag"));
-        }
+        cmd.setStrings(List.of("mine"));
         meta.setCustomModelDataComponent(cmd);
         stack.setItemMeta(meta);
         return stack;
     }
 
-    public ItemDisplay spawnItemDisplay(Block block) {
-        return block.getWorld().spawn(
-            block.getLocation().toCenterLocation(),
+    public void spawnItemDisplay(Location location) {
+        location.getWorld().spawn(
+            location.toCenterLocation(),
             ItemDisplay.class,
             entity -> entity.setItemStack(getEntityStack())
         );
     }
 
     boolean isNonMine() {
-        return this.ordinal() <= EIGHT.ordinal();
+        return this != MINE;
     }
 
     public static Optional<GameField> fromMaterial(Material material) {
-        for (GameField field : GameField.values()) {
-            if (field.block == material) {
-                return Optional.of(field);
-            }
-        }
-        return Optional.empty();
+        return Optional.ofNullable(MATERIAL_INDEX.get(material));
     }
 
     public static final List<Material> NON_MINE_MATERIALS = Arrays.stream(GameField.values())
         .skip(1)
         .takeWhile(f -> f.ordinal() <= 8)
-        .map(f -> f.block)
+        .map(f -> f.type)
         .toList();
 }

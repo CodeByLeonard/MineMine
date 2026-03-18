@@ -10,6 +10,7 @@ import org.bukkit.boss.BarColor;
 import org.bukkit.boss.BarFlag;
 import org.bukkit.boss.BarStyle;
 import org.bukkit.boss.BossBar;
+import org.bukkit.entity.Entity;
 import org.bukkit.entity.Firework;
 import org.bukkit.entity.ItemDisplay;
 import org.bukkit.entity.Player;
@@ -35,7 +36,6 @@ public class GameState {
 
     private final GameField[][] field = new GameField[16][16];
     private final FieldState[][] states = new FieldState[16][16];
-    private final List<ItemDisplay> entities = new ArrayList<>();
     private final Consumer<GameState> finishCallback;
 
     private GameState(Player player, Block locator, Consumer<GameState> finishCallback) {
@@ -49,38 +49,21 @@ public class GameState {
         int blockChunkZ = ((z % 16) + 16) % 16;
         int y = locator.getY() + 1;
 
+        FieldState prior = states[blockChunkX][blockChunkZ];
+        FieldState posterior = prior.getToggledFlagState();
+        GameField cell = field[blockChunkX][blockChunkZ];
         Block block = locator.getChunk().getBlock(blockChunkX, y, blockChunkZ);
 
-        if (states[blockChunkX][blockChunkZ] == FieldState.FLAGGED) {
-            states[blockChunkX][blockChunkZ] = FieldState.COVERED;
+        if (prior == FieldState.FLAGGED) {
             MineSweeperPlugin.instance.getLogger().info("Unflagging Field...");
-            defer(() -> {
-                Collection<ItemDisplay> foundEntities = block.getLocation().toCenterLocation()
-                    .getNearbyEntitiesByType(ItemDisplay.class, .1);
-                for (ItemDisplay display : foundEntities) {
-                    entities.remove(display);
-                    display.remove();
-                }
-                block.setType(GameField.UNKNOWN.block);
-            });
             flagsPlaced--;
-        } else if (states[blockChunkX][blockChunkZ] == FieldState.COVERED) {
-            states[blockChunkX][blockChunkZ] = FieldState.FLAGGED;
+        } else {
             MineSweeperPlugin.instance.getLogger().info("Flagging Field...");
-            defer(() -> {
-                block.setType(Material.AIR);
-                ItemDisplay flag = GameField.FLAG.spawnItemDisplay(block);
-                MineSweeperPlugin.instance.getLogger().fine("Flag Box: %s".formatted(flag.getBoundingBox()));
-                flag.setDisplayWidth(1f);
-                flag.setDisplayHeight(1f);
-                entities.add(flag);
-            });
             flagsPlaced++;
-            if (flagsPlaced == mines && checkWinCondition()) {
-                finish(true);
-                finishCallback.accept(this);
-            }
         }
+
+        defer(() -> prior.changeTo(block.getLocation(), posterior, cell));
+        states[blockChunkX][blockChunkZ] = posterior;
         this.bar.setProgress(1 - (double) flagsPlaced / mines);
     }
 
@@ -100,9 +83,11 @@ public class GameState {
             if (gameField == GameField.NONE) {
                 uncoverSurrounding(origin.getChunk(), blockChunkX, blockChunkZ, y);
             } else {
-                origin.getRelative(BlockFace.UP).setType(Material.AIR);
-                origin.setType(Material.BARRIER);
-                entities.add(gameField.spawnItemDisplay(origin));
+                FieldState.COVERED.changeTo(
+                    origin.getRelative(BlockFace.UP).getLocation(),
+                    FieldState.UNCOVERED,
+                    gameField
+                );
                 states[blockChunkX][blockChunkZ] = FieldState.UNCOVERED;
             }
 
@@ -124,22 +109,23 @@ public class GameState {
 
         while (!cleared.isEmpty()) {
             Vector2i item = cleared.removeFirst();
+            FieldState.COVERED.changeTo(
+                chunk.getBlock(item.x, y + 1, item.y).getLocation(),
+                FieldState.UNCOVERED,
+                GameField.NONE
+            );
             states[item.x][item.y] = FieldState.UNCOVERED;
-            chunk.getBlock(item.x, y + 1, item.y).setType(Material.AIR);
-            Block block = chunk.getBlock(item.x, y, item.y);
-            block.setType(Material.BARRIER);
-            entities.add(GameField.NONE.spawnItemDisplay(block));
 
             forEachSurrounding(field, item.x, item.y, (f, coords) -> {
                 if (f == GameField.NONE && states[coords.x][coords.y] == FieldState.COVERED) {
                     cleared.add(coords);
                 } else if (states[coords.x][coords.y] == FieldState.COVERED) {
+                    FieldState.COVERED.changeTo(
+                        chunk.getBlock(coords.x, y + 1, coords.y).getLocation(),
+                        FieldState.UNCOVERED,
+                        field[coords.x][coords.y]
+                    );
                     states[coords.x][coords.y] = FieldState.UNCOVERED;
-                    chunk.getBlock(coords.x, y + 1, coords.y).setType(Material.AIR);
-                    Block recBlock = chunk.getBlock(coords.x, y, coords.y);
-                    GameField recField = field[coords.x][coords.y];
-                    recBlock.setType(Material.BARRIER);
-                    entities.add(recField.spawnItemDisplay(recBlock));
                 }
             });
         }
@@ -174,8 +160,10 @@ public class GameState {
         player.teleport(locator.getLocation().toCenterLocation());
         defer(() -> {
             bar.removeAll();
-            for (ItemDisplay entity : entities) {
-                entity.remove();
+            for (Entity entity : locator.getChunk().getEntities()) {
+                if (entity instanceof ItemDisplay) {
+                    entity.remove();
+                }
             }
 
             if (win) {
@@ -262,8 +250,8 @@ public class GameState {
                     int minesInVicinity = getMinesInVicinity(this.field, x, z);
                     this.field[x][z] = GameField.values()[minesInVicinity];
                 }
-                chunk.getBlock(x, yLevel, z).setType(GameField.NONE.block);
-                chunk.getBlock(x, yLevel + 1, z).setType(GameField.UNKNOWN.block);
+                chunk.getBlock(x, yLevel, z).setType(GameField.NONE.type);
+                chunk.getBlock(x, yLevel + 1, z).setType(Material.HEAVY_WEIGHTED_PRESSURE_PLATE);
             }
         }
     }

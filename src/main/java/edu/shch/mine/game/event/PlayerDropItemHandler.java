@@ -8,6 +8,7 @@ import edu.shch.mine.util.minecraft.ChunkUtils;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -24,7 +25,7 @@ public class PlayerDropItemHandler implements Listener {
 
     @EventHandler
     public void toggleFlag(PlayerDropItemEvent event) {
-        if (event.getItemDrop().getItemStack().getType() != GameField.FLAG.block) return;
+        if (event.getItemDrop().getItemStack().getType() != Material.RED_BANNER) return;
 
         MineSweeperPlugin plugin = MineSweeperPlugin.instance;
         ArrayList<GameState> games = plugin.games;
@@ -39,10 +40,10 @@ public class PlayerDropItemHandler implements Listener {
             Block block = result.getHitBlock();
             if (block == null) continue;
 
-            if (block.getType() == GameField.UNKNOWN.block) {
-                FlagLogic.toggleFlag(event.getItemDrop(), game, block, player.getInventory());
-            } else if (block.getType() == GameField.NONE.block) {
-                FlagLogic.unflag(event.getItemDrop(), game, block, player.getInventory());
+            if (block.getType() == Material.HEAVY_WEIGHTED_PRESSURE_PLATE) {
+                FlagLogic.toggleFlag(game, block, () -> event.setCancelled(true));
+            } else if (block.getType() == GameField.NONE.type) {
+                FlagLogic.unflag(game, block, () -> event.setCancelled(true));
             }
         }
     }
