@@ -1,5 +1,8 @@
 package edu.shch.mine.game.event;
 
+import edu.shch.mine.MineSweeperPlugin;
+import edu.shch.mine.game.GameState;
+import edu.shch.mine.util.minecraft.ChunkUtils;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -17,7 +20,17 @@ public class BlockBreakHandler implements Listener {
     private static final BlockBreakHandler instance = new BlockBreakHandler();
 
     @EventHandler
-    public void destroyEntityOnBreak(BlockBreakEvent event) {
+    public void handleBreak(BlockBreakEvent event) {
+        for (GameState game : MineSweeperPlugin.instance.games) {
+            if (ChunkUtils.sameChunk(event.getBlock(), game.locator)) {
+                event.setCancelled(true);
+                break;
+            }
+        }
+        destroyEntityOnBreak(event);
+    }
+
+    private static void destroyEntityOnBreak(BlockBreakEvent event) {
         if (event.getBlock().getType() == Material.BARRIER) {
             Collection<ItemDisplay> displays = event.getBlock().getLocation()
                 .toCenterLocation().getNearbyEntitiesByType(ItemDisplay.class, .1);

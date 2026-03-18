@@ -67,16 +67,11 @@ public class BlockPlaceHandler implements Listener {
         Block below = block.getRelative(BlockFace.DOWN);
         for (GameState game : MineSweeperPlugin.instance.games) {
             if (ChunkUtils.sameChunk(game.locator, below)) {
-                if (below.getType() == GameField.NONE.type) {
-                    game.toggleFlag(block.getX(), block.getZ());
-                    if (game.isNotFinished()) {
-                        cancel.run();
-                    }
-                } else if (below.getType() == Material.HEAVY_WEIGHTED_PRESSURE_PLATE) {
-                    game.toggleFlag(below.getX(), below.getZ());
-                    if (game.isNotFinished()) {
-                        cancel.run();
-                    }
+                Material type = below.getType();
+                if (type == GameField.NONE.type || type == Material.HEAVY_WEIGHTED_PRESSURE_PLATE) {
+                    FlagLogic.toggleFlag(game, block, cancel);
+                } else {
+                    cancel.run();
                 }
             }
         }

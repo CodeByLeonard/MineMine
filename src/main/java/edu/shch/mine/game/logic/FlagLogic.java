@@ -15,8 +15,6 @@ import org.jspecify.annotations.NonNull;
 import java.util.Collection;
 import java.util.List;
 
-import static edu.shch.mine.util.Utils.defer;
-
 public class FlagLogic {
     @SuppressWarnings("UnstableApiUsage")
     public static @NonNull ItemStack createFlag() {
@@ -48,12 +46,10 @@ public class FlagLogic {
     }
 
     public static void toggleFlag(GameState game, Block block, Runnable cancel) {
-        defer(() -> {
-            game.toggleFlag(block.getX(), block.getZ());
-            if (game.isNotFinished()) {
-                cancel.run();
-            }
-        });
+        game.toggleFlag(block.getX(), block.getZ());
+        if (game.isNotFinished()) {
+            cancel.run();
+        }
     }
 
     public static void giveFlag(PlayerInventory inventory) {
