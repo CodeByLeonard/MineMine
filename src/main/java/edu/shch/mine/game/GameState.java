@@ -263,9 +263,13 @@ public class GameState {
             for (int x = 0; x < 16; x++) {
                 for (int z = 0; z < 16; z++) {
                     GameField field = this.field[x][z];
-                    if (field == GameField.MINE || (blockChunkX == x && blockChunkZ == z)) {
-                        continue;
-                    }
+                    if (field == GameField.MINE) continue;
+
+                    // Spawn Area
+                    int dx = Math.abs(blockChunkX - x);
+                    int dy = Math.abs(blockChunkZ - z);
+                    if (dx < 2 || dy < 2) continue;
+
                     if (Math.random() < chance) {
                         this.field[x][z] = GameField.MINE;
                         minesPlaced++;
