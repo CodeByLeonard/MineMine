@@ -97,7 +97,11 @@ public class GameState {
                 finish(true);
                 finishCallback.accept(this);
             } else {
-                player.setVelocity(new Vector(0, 1f, 0));
+                if (player.getGameMode() == GameMode.SURVIVAL) {
+                    player.setVelocity(new Vector(0, .7f, 0));
+                } else {
+                    player.setVelocity(new Vector(0, 2f, 0));
+                }
             }
         }
     }
